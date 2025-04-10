@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:homease/views/authentication/login/provider/login_provider.dart';
+import 'package:homease/views/bottom_bar/provider/bottom_bar_provider.dart';
 import 'package:homease/views/splash/splash.dart';
 import 'package:provider/provider.dart';
 
@@ -8,6 +9,7 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => LoginProvider()),
+        ChangeNotifierProvider(create: (_) => BottomNavProvider()),
       ],
       child: const MyApp(),
     ),

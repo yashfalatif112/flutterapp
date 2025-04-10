@@ -18,9 +18,9 @@ class LoginProvider extends ChangeNotifier {
 
   void login() {
     if (agreedToTerms) {
-      // Handle login logic here
       debugPrint("Email: ${emailController.text}");
       debugPrint("Password: ${passwordController.text}");
+      
     } else {
       debugPrint("Please accept terms & conditions");
     }

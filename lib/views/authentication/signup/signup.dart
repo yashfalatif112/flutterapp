@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homease/views/authentication/login/login.dart';
+import 'package:homease/views/bottom_bar/bottom_bar.dart';
 import 'package:homease/widgets/custom_button.dart';
 import 'package:homease/widgets/custom_textfield.dart';
 import 'package:dotted_border/dotted_border.dart';
@@ -55,8 +56,6 @@ class _SignupScreenState extends State<SignupScreen> {
                 style: TextStyle(color: Colors.black54),
               ),
               const SizedBox(height: 24),
-
-              // Form Fields
               Row(
                 children: [
                   Text(
@@ -131,7 +130,6 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               CustomTextField(hintText: '', controller: descriptionController),
               const SizedBox(height: 12),
-
               Row(
                 children: [
                   Text(
@@ -146,8 +144,6 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               CustomTextField(hintText: '', controller: descriptionController),
               const SizedBox(height: 16),
-
-              // File Picker
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -171,9 +167,9 @@ class _SignupScreenState extends State<SignupScreen> {
                         pickGovIdFile();
                       },
                       child: DottedBorder(
-                          color: Colors.grey, // Border color
+                          color: Colors.grey,
                           strokeWidth: 1,
-                          dashPattern: [6, 4], // [dash length, gap length]
+                          dashPattern: [6, 4],
                           borderType: BorderType.RRect,
                           radius: Radius.circular(12),
                           child: SizedBox(
@@ -186,20 +182,24 @@ class _SignupScreenState extends State<SignupScreen> {
                                 Text(
                                   pickedFile?.name ??
                                       'Browse and select files you want to upload from your computer',
-                                      textAlign: TextAlign.center,
+                                  textAlign: TextAlign.center,
                                   style: const TextStyle(
                                       color: Colors.black54, fontSize: 12),
                                 ),
-                                SizedBox(height: 5,),
+                                SizedBox(
+                                  height: 5,
+                                ),
                                 Container(
                                   width: 30,
                                   height: 30,
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(5),
-                                    color: Colors.green
-                                  ),
+                                      borderRadius: BorderRadius.circular(5),
+                                      color: Colors.green),
                                   child: Center(
-                                    child: Icon(Icons.add,color: Colors.white,),
+                                    child: Icon(
+                                      Icons.add,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 )
                               ],
@@ -210,29 +210,27 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Signup Button
               CustomButton(
                 text: 'Signup',
                 onTap: () {
-                  // Handle signup logic
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => BottomBarScreen()));
                 },
               ),
-
               const SizedBox(height: 16),
               Row(
-              children: const [
-                Expanded(child: Divider()),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: Text("Or Sign Up With"),
-                ),
-                Expanded(child: Divider()),
-              ],
-            ),
+                children: const [
+                  Expanded(child: Divider()),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Text("Or Sign Up With"),
+                  ),
+                  Expanded(child: Divider()),
+                ],
+              ),
               const SizedBox(height: 12),
-
-              // Social Buttons
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -246,18 +244,19 @@ class _SignupScreenState extends State<SignupScreen> {
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(builder: (context)=>LoginScreen()));
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => LoginScreen()));
                 },
                 child: Text.rich(
                   TextSpan(
                     text: 'Already have an account? ',
-                    style: GoogleFonts.roboto(
-                      color: Colors.black
-                    ),
+                    style: GoogleFonts.roboto(color: Colors.black),
                     children: const [
                       TextSpan(
                         text: 'Sign in',
-                        style: TextStyle(fontWeight: FontWeight.bold,decoration: TextDecoration.underline),
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline),
                       ),
                     ],
                   ),

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:homease/views/authentication/forget_pass/forget_password.dart';
 import 'package:homease/views/authentication/login/provider/login_provider.dart';
 import 'package:homease/views/authentication/signup/signup.dart';
+import 'package:homease/views/bottom_bar/bottom_bar.dart';
 import 'package:homease/widgets/custom_button.dart';
 import 'package:homease/widgets/custom_textfield.dart';
 import 'package:provider/provider.dart';
@@ -101,7 +102,10 @@ class LoginScreen extends StatelessWidget {
             const SizedBox(height: 12),
             CustomButton(
               text: "Login",
-              onTap: provider.login,
+              onTap: (){
+                provider.login;
+                Navigator.push(context, MaterialPageRoute(builder: (context)=>BottomBarScreen()));
+              }
             ),
             const SizedBox(height: 24),
             Row(
