@@ -26,6 +26,11 @@ class MyApp extends StatelessWidget {
       title: 'Go Homease',
       theme: ThemeData(
         scaffoldBackgroundColor: Color(0xFFFAF9F1),
+        appBarTheme: AppBarTheme(
+          backgroundColor: Color(0xFFFAF9F1),
+          elevation: 0,
+          scrolledUnderElevation: 0,
+        ),
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),

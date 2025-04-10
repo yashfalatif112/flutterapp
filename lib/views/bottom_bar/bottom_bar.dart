@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:homease/views/bookings/bookings.dart';
 import 'package:homease/views/bottom_bar/provider/bottom_bar_provider.dart';
 import 'package:homease/views/home/home.dart';
+import 'package:homease/views/messages/messages.dart';
+import 'package:homease/views/profile/profile.dart';
+import 'package:homease/views/wallet/wallet.dart';
 import 'package:provider/provider.dart';
 
 class BottomBarScreen extends StatelessWidget {
@@ -9,10 +13,10 @@ class BottomBarScreen extends StatelessWidget {
 
   final List<Widget> _screens = const [
     HomeScreen(),
-    Placeholder(),
-    Placeholder(),
-    Placeholder(),
-    Placeholder(),
+    BookingsScreen(),
+    WalletScreen(),
+    MessageScreen(),
+    ProfileScreen(),
   ];
 
   final List<String> _icons = const [
