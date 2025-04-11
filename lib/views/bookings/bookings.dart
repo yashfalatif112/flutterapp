@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:homease/views/service_details/service_details.dart';
 
 class BookingsScreen extends StatelessWidget {
   const BookingsScreen({super.key});
@@ -202,12 +203,24 @@ class ServiceCategory extends StatelessWidget {
           ...services.map(
             (service) => Column(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(service),
-                    const Icon(Icons.arrow_forward_ios, size: 16),
-                  ],
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AllServicesScreen(
+                      
+                        ),
+                      ),
+                    );
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(service),
+                      const Icon(Icons.arrow_forward_ios, size: 16),
+                    ],
+                  ),
                 ),
                 const Divider(),
               ],
