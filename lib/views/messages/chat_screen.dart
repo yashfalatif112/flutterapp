@@ -8,7 +8,7 @@ class ChatScreen extends StatelessWidget {
     final List<Map<String, dynamic>> messages = [
       {
         "fromMe": false,
-        "message": "Hey Olivia, can you please review the latest design when you can?"
+        "message": "Hey, can you please review the latest design when you can?"
       },
       {
         "fromMe": true,

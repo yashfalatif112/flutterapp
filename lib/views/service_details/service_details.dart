@@ -26,9 +26,9 @@ class AllServicesScreen extends StatelessWidget {
         centerTitle: true,
         actions: const [
           Icon(Icons.grid_view, color: Colors.black),
-          SizedBox(width: 16),
+          SizedBox(width: 17),
           Icon(Icons.settings, color: Colors.black),
-          SizedBox(width: 8),
+          SizedBox(width: 9),
         ],
       ),
       body: Column(

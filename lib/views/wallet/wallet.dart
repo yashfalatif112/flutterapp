@@ -40,7 +40,7 @@ class WalletScreen extends StatelessWidget {
             const SizedBox(height: 12),
             const CardBox(text: 'Connected'),
             const SizedBox(height: 12),
-            const CardBox(text: 'Connected   •••• 3054'),
+            const CardBox(text: 'Connected  •••• 3054'),
             const Spacer(),
             SizedBox(
               height: 48,
@@ -146,7 +146,7 @@ class AddNewCardScreen extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: const [
-                Expanded(child: InputField(label: 'Expiry Date', hint: '12/25')),
+                Expanded(child: InputField(label: 'Expiry Date', hint: '05/29')),
                 SizedBox(width: 12),
                 Expanded(child: InputField(label: 'CVV', hint: '***')),
               ],
