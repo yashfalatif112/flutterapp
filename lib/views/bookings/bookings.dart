@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:homease/views/notifications/notifications.dart';
 import 'package:homease/views/service_details/service_details.dart';
 
 class BookingsScreen extends StatelessWidget {
@@ -9,7 +10,7 @@ class BookingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Bookings'),
+        title: Text('All Services'),
         centerTitle: true,
         automaticallyImplyLeading: false,
         backgroundColor: Color(0xFFF8F1EB),
@@ -24,23 +25,28 @@ class BookingsScreen extends StatelessWidget {
           ),
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 10.0),
-            child: Container(
-              width: 29,
-              height: 29,
-              decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(6)),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SvgPicture.asset(
-                    'assets/icons/bell.svg',
-                    width: 20,
-                    height: 20,
-                  ),
-                ],
+          GestureDetector(
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context)=>NotificationScreen()));
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(right: 10.0),
+              child: Container(
+                width: 29,
+                height: 29,
+                decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(6)),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SvgPicture.asset(
+                      'assets/icons/bell.svg',
+                      width: 20,
+                      height: 20,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

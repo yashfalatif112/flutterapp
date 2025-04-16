@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:homease/views/authentication/login/provider/login_provider.dart';
 import 'package:homease/views/bottom_bar/provider/bottom_bar_provider.dart';
 import 'package:homease/views/splash/splash.dart';
@@ -25,6 +26,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Go Homease',
       theme: ThemeData(
+        textTheme: GoogleFonts.robotoTextTheme(),
         scaffoldBackgroundColor: Color(0xFFFAF9F1),
         appBarTheme: AppBarTheme(
           backgroundColor: Color(0xFFFAF9F1),

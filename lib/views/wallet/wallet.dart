@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:homease/views/payment_status/payment_status.dart';
+import 'package:homease/widgets/dialog.dart';
 
 class WalletScreen extends StatelessWidget {
   const WalletScreen({super.key});
@@ -29,36 +31,38 @@ class WalletScreen extends StatelessWidget {
           )
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const CardBox(text: 'Connected'),
-            const SizedBox(height: 12),
-            const CardBox(text: 'Connected'),
-            const SizedBox(height: 12),
-            const CardBox(text: 'Connected'),
-            const SizedBox(height: 12),
-            const CardBox(text: 'Connected  •••• 3054'),
-            const Spacer(),
-            SizedBox(
-              height: 48,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AddNewCardScreen()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const CardBox(text: 'Connected'),
+              const SizedBox(height: 12),
+              const CardBox(text: 'Connected'),
+              const SizedBox(height: 12),
+              const CardBox(text: 'Connected'),
+              const SizedBox(height: 12),
+              const CardBox(text: 'Connected  •••• 3054'),
+              SizedBox(height: 30,),
+              SizedBox(
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AddNewCardScreen()),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Add New Card', style: TextStyle(fontSize: 16,color: Colors.white)),
                 ),
-                child: const Text('Add New Card', style: TextStyle(fontSize: 16,color: Colors.white)),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -117,53 +121,71 @@ class AddNewCardScreen extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.green,
-                borderRadius: BorderRadius.circular(16),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Icon(Icons.credit_card, color: Colors.white, size: 28),
+                    SizedBox(height: 16),
+                    Text('1234 5678 8765 0876', style: TextStyle(color: Colors.white, fontSize: 20, letterSpacing: 2)),
+                    SizedBox(height: 4),
+                    Text('VALID THRU    12/28', style: TextStyle(color: Colors.white70)),
+                    SizedBox(height: 4),
+                    Text('ALEX', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ],
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 24),
+              const InputField(label: 'Card Name', hint: 'Ivory Black'),
+              const SizedBox(height: 12),
+              const InputField(label: 'Card Number', hint: '****  8765  3456'),
+              const SizedBox(height: 12),
+              Row(
                 children: const [
-                  Icon(Icons.credit_card, color: Colors.white, size: 28),
-                  SizedBox(height: 16),
-                  Text('1234 5678 8765 0876', style: TextStyle(color: Colors.white, fontSize: 20, letterSpacing: 2)),
-                  SizedBox(height: 4),
-                  Text('VALID THRU    12/28', style: TextStyle(color: Colors.white70)),
-                  SizedBox(height: 4),
-                  Text('ALEX', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  Expanded(child: InputField(label: 'Expiry Date', hint: '05/29')),
+                  SizedBox(width: 12),
+                  Expanded(child: InputField(label: 'CVV', hint: '***')),
                 ],
               ),
-            ),
-            const SizedBox(height: 24),
-            const InputField(label: 'Card Name', hint: 'Ivory Black'),
-            const SizedBox(height: 12),
-            const InputField(label: 'Card Number', hint: '****  8765  3456'),
-            const SizedBox(height: 12),
-            Row(
-              children: const [
-                Expanded(child: InputField(label: 'Expiry Date', hint: '05/29')),
-                SizedBox(width: 12),
-                Expanded(child: InputField(label: 'CVV', hint: '***')),
-              ],
-            ),
-            const Spacer(),
-            SizedBox(
-              height: 48,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              SizedBox(height: 30,),
+              SizedBox(
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () {
+                    showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => ThankYouDialog(
+                        titleText: 'Card Added',
+                        subtitleText:
+                            'Your card has been added successfully',
+                        buttonText: 'Continue',
+                        onPressed: () {
+                          Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => PaymentStatus()));
+                        },),
+                  );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('Add', style: TextStyle(fontSize: 16,color: Colors.white)),
                 ),
-                child: const Text('Add', style: TextStyle(fontSize: 16,color: Colors.white)),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

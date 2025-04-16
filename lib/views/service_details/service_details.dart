@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:homease/views/book_service/book_service.dart';
 
 class AllServicesScreen extends StatelessWidget {
   const AllServicesScreen({super.key});
@@ -49,7 +49,8 @@ class AllServicesScreen extends StatelessWidget {
                 ),
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -77,13 +78,22 @@ class ServiceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BookService(),
+          ),
+        );
+      },
       leading: const CircleAvatar(
         radius: 25,
         backgroundImage: NetworkImage(
           'https://randomuser.me/api/portraits/women/1.jpg',
         ),
       ),
-      title: const Text('Brooklyn Simmons', style: TextStyle(fontWeight: FontWeight.bold)),
+      title: const Text('Brooklyn Simmons',
+          style: TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Row(
         children: const [
           Icon(Icons.access_time, size: 16, color: Colors.grey),

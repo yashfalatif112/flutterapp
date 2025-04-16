@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:homease/views/profile/tabbar_screens/task_screen/task.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -48,98 +50,136 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           )
         ],
       ),
-      body: Column(
-        children: [
-          Stack(
-            alignment: Alignment.bottomLeft,
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
-                ),
-                child: Image.asset(
-                  "assets/images/eiffel.png",
-                  width: double.infinity,
-                  height: 180,
-                  fit: BoxFit.cover,
-                ),
-              ),
-              Positioned(
-                left: 16,
-                bottom: -30,
-                child: CircleAvatar(
-                  radius: 30,
-                  backgroundImage: AssetImage("assets/images/book.png"),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 40),
-          const Text(
-            "Ralph Edwards",
-            textAlign: TextAlign.left,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const Text("Business name", style: TextStyle(color: Colors.grey)),
-          const SizedBox(height: 5),
-          const Text(
-            "24 reviews",
-            style: TextStyle(color: Colors.green),
-          ),
-          const SizedBox(height: 16),
-          TabBar(
-            controller: _tabController,
-            indicatorColor: Colors.green,
-            labelColor: Colors.black,
-            unselectedLabelColor: Colors.grey,
-            tabs: const [
-              Tab(text: "About"),
-              Tab(text: "Tasks"),
-              Tab(text: "Reviews"),
-            ],
-          ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Row(
-                        children: [
-                          Icon(Icons.star, color: Colors.amber),
-                          SizedBox(width: 5),
-                          Text("4.99", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                          SizedBox(width: 5),
-                          Text("of 20 reviews", style: TextStyle(color: Colors.grey)),
-                        ],
-                      ),
-                      SizedBox(height: 10),
-                      Text("United States", style: TextStyle(color: Colors.black)),
-                      Text("Business address", style: TextStyle(color: Colors.grey)),
-                      SizedBox(height: 10),
-                      Text("172 project posted", style: TextStyle(color: Colors.black)),
-                      Text("70% hire rate, 1 open project", style: TextStyle(color: Colors.grey)),
-                      SizedBox(height: 10),
-                      Text("57k\$ total spent", style: TextStyle(color: Colors.black)),
-                      Text("Business address", style: TextStyle(color: Colors.grey)),
-                    ],
+      body: SingleChildScrollView( // Wrap the body in a SingleChildScrollView
+        child: Column(
+          children: [
+            SizedBox(
+              height: 220,
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(0),
+                      bottomRight: Radius.circular(0),
+                    ),
+                    child: Image.asset(
+                      "assets/images/eiffel.png",
+                      width: double.infinity,
+                      height: 180,
+                      fit: BoxFit.cover,
+                    ),
                   ),
-                ),
-
-                
-                const Center(child: Text("Tasks will be shown here.")),
-
-                
-                const Center(child: Text("Reviews will be shown here.")),
+                  Positioned(
+                    left: 16,
+                    bottom: 3,
+                    child: CircleAvatar(
+                      radius: 40,
+                      child: Icon(Icons.person),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Row(
+                children: [
+                  const Text(
+                    "Ralph Edwards",
+                    textAlign: TextAlign.left,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  Spacer(),
+                  Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.grey),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SvgPicture.asset('assets/icons/chat_icon.svg'),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Row(
+                children: [
+                  const Text("Business name", style: TextStyle(color: Colors.grey)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 5),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: Row(
+                children: [
+                  const Text(
+                    "24 reviews",
+                    style: TextStyle(color: Colors.green),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            TabBar(
+              dividerColor: Colors.transparent,
+              controller: _tabController,
+              indicatorColor: Colors.green,
+              labelColor: Colors.black,
+              unselectedLabelColor: Colors.grey,
+              tabs: const [
+                Tab(text: "About"),
+                Tab(text: "Tasks"),
+                Tab(text: "Reviews"),
               ],
             ),
-          ),
-        ],
+            SizedBox( 
+              height: MediaQuery.of(context).size.height,
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Row(
+                          children: [
+                            Icon(Icons.star, color: Colors.amber),
+                            SizedBox(width: 5),
+                            Text("4.99", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            SizedBox(width: 5),
+                            Text("of 20 reviews", style: TextStyle(color: Colors.grey)),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+                        Text("United States", style: TextStyle(color: Colors.black)),
+                        Text("Business address", style: TextStyle(color: Colors.grey)),
+                        SizedBox(height: 10),
+                        Text("172 project posted", style: TextStyle(color: Colors.black)),
+                        Text("70% hire rate, 1 open project", style: TextStyle(color: Colors.grey)),
+                        SizedBox(height: 10),
+                        Text("57k\$ total spent", style: TextStyle(color: Colors.black)),
+                        Text("Business address", style: TextStyle(color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                  TaskDetailScreen(),
+                  const Center(child: Text("Reviews will be shown here.")),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

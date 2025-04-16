@@ -6,13 +6,14 @@ import 'package:homease/views/home/home.dart';
 import 'package:homease/views/messages/messages.dart';
 import 'package:homease/views/profile/profile.dart';
 import 'package:homease/views/wallet/wallet.dart';
+import 'package:homease/widgets/custom_drawer.dart';
 import 'package:provider/provider.dart';
-
+final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 class BottomBarScreen extends StatelessWidget {
-  const BottomBarScreen({super.key});
+  BottomBarScreen({super.key});
 
-  final List<Widget> _screens = const [
-    HomeScreen(),
+  final List<Widget> _screens = [
+    HomeScreen(scaffoldKey: _scaffoldKey),
     BookingsScreen(),
     WalletScreen(),
     MessageScreen(),
@@ -32,6 +33,8 @@ class BottomBarScreen extends StatelessWidget {
     final provider = Provider.of<BottomNavProvider>(context);
 
     return Scaffold(
+      drawer: const CustomDrawer(),
+      key: _scaffoldKey,
       body: _screens[provider.currentIndex],
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
