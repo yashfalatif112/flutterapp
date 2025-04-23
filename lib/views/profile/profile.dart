@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:homease/views/profile/tabbar_screens/task_screen/task.dart';
+import 'package:homease/views/profile/widgets/calender.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -134,8 +135,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Service Type',style: TextStyle(color: Colors.white),),
-                          Text('App Developer',style: TextStyle(color: Colors.white),),
+                          Text(
+                            'Service Type',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          Text(
+                            'App Developer',
+                            style: TextStyle(color: Colors.white),
+                          ),
                         ],
                       ),
                       Spacer(),
@@ -194,8 +201,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Row(
+                      children: [
+                        const Row(
                           children: [
                             Icon(Icons.star, color: Colors.amber),
                             SizedBox(width: 5),
@@ -207,21 +214,61 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 style: TextStyle(color: Colors.grey)),
                           ],
                         ),
-                        SizedBox(height: 10),
-                        Text("United States",
+                        const SizedBox(height: 10),
+                        const Text("United States",
                             style: TextStyle(color: Colors.black)),
-                        Text("Business address",
+                        const Text("Business address",
                             style: TextStyle(color: Colors.grey)),
-                        SizedBox(height: 10),
-                        Text("172 project posted",
+                        const SizedBox(height: 10),
+                        const Text("172 project posted",
                             style: TextStyle(color: Colors.black)),
-                        Text("70% hire rate, 1 open project",
+                        const Text("70% hire rate, 1 open project",
                             style: TextStyle(color: Colors.grey)),
-                        SizedBox(height: 10),
-                        Text("57k\$ total spent",
+                        const SizedBox(height: 10),
+                        const Text("57k\$ total spent",
                             style: TextStyle(color: Colors.black)),
-                        Text("Business address",
+                        const Text("Business address",
                             style: TextStyle(color: Colors.grey)),
+                        SizedBox(
+                          height: 10,
+                        ),
+                        Row(
+                          children: [
+                            const Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("'Next Availability'",
+                                    style: TextStyle(color: Colors.grey)),
+                                Text('2 AM',
+                                    style: TextStyle(color: Colors.grey))
+                              ],
+                            ),
+                            const Spacer(),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            CalenderScreen()));
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.green),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  child: Text(
+                                    'Next Availability',
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 12),
+                                  ),
+                                ),
+                              ),
+                            )
+                          ],
+                        ),
                       ],
                     ),
                     TaskDetailScreen(),
