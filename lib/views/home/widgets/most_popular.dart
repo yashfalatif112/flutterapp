@@ -38,6 +38,7 @@ class MostPopularSection extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.grey.shade300,
                         borderRadius: BorderRadius.circular(8),
+                        image: DecorationImage(image: AssetImage('assets/images/mostPopular.png'),fit: BoxFit.cover)
                       ),
                     ),
                     const SizedBox(height: 8),

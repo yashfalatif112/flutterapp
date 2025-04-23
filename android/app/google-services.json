@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "401032461458",
+    "project_id": "go-home-ease",
+    "storage_bucket": "go-home-ease.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:401032461458:android:26fbe518b23d2976d97a4b",
+        "android_client_info": {
+          "package_name": "com.example.homease"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFkvEWp0Mlq8YmL7NBF3d2ZdG0qwHjNpM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

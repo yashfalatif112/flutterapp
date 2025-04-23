@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:homease/views/profile/tabbar_screens/task_screen/task.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -9,7 +8,8 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateMixin {
+class _ProfileScreenState extends State<ProfileScreen>
+    with TickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -50,135 +50,187 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           )
         ],
       ),
-      body: SingleChildScrollView( // Wrap the body in a SingleChildScrollView
-        child: Column(
-          children: [
-            SizedBox(
-              height: 220,
-              child: Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(0),
-                      bottomRight: Radius.circular(0),
-                    ),
-                    child: Image.asset(
-                      "assets/images/eiffel.png",
-                      width: double.infinity,
-                      height: 180,
-                      fit: BoxFit.cover,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Column(
+            children: [
+              // SizedBox(
+              //   height: 220,
+              //   child: Stack(
+              //     children: [
+              //       ClipRRect(
+              //         borderRadius: const BorderRadius.only(
+              //           bottomLeft: Radius.circular(0),
+              //           bottomRight: Radius.circular(0),
+              //         ),
+              //         child: Image.asset(
+              //           "assets/images/eiffel.png",
+              //           width: double.infinity,
+              //           height: 180,
+              //           fit: BoxFit.cover,
+              //         ),
+              //       ),
+              //       Positioned(
+              //         left: 16,
+              //         bottom: 3,
+              //         child: CircleAvatar(
+              //           radius: 40,
+              //           child: Icon(Icons.person),
+              //         ),
+              //       ),
+              //     ],
+              //   ),
+              // ),
+              Align(
+                alignment: Alignment.topLeft,
+                child: CircleAvatar(
+                  radius: 40,
+                  child: Icon(Icons.person),
+                ),
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              Align(
+                alignment: Alignment.topLeft,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: Colors.green,
+                  ),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    child: Text(
+                      'Developer',
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
-                  Positioned(
-                    left: 16,
-                    bottom: 3,
-                    child: CircleAvatar(
-                      radius: 40,
-                      child: Icon(Icons.person),
-                    ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.topLeft,
+                child: const Text(
+                  "Ralph Edwards",
+                  textAlign: TextAlign.left,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 5),
+              Container(
+                width: double.infinity,
+                height: 60,
+                decoration: BoxDecoration(
+                    color: Colors.green,
+                    borderRadius: BorderRadius.circular(12)),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 15.0),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Service Type',style: TextStyle(color: Colors.white),),
+                          Text('App Developer',style: TextStyle(color: Colors.white),),
+                        ],
+                      ),
+                      Spacer(),
+                      Container(
+                        decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12)),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10.0, vertical: 2),
+                          child: Text('Active'),
+                        ),
+                      )
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-            const SizedBox(height: 10),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Row(
-                children: [
-                  const Text(
-                    "Ralph Edwards",
-                    textAlign: TextAlign.left,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  Spacer(),
-                  Container(
-                    width: 30,
-                    height: 30,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.grey),
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsets.only(right: 60.0),
+                child: TabBar(
+                  dividerColor: Colors.transparent,
+                  controller: _tabController,
+                  indicatorColor: Colors.green,
+                  labelColor: Colors.black,
+                  unselectedLabelColor: Colors.grey,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  tabs: const [
+                    Tab(text: "Portfolio"),
+                    Tab(
+                        child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              "Reviews &\nRating",
+                              textAlign: TextAlign.center,
+                            ))),
+                    Tab(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          "Certifications &\nQualifications",
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SvgPicture.asset('assets/icons/chat_icon.svg'),
-                      ],
-                    ),
-                  )
-                ],
+                  ],
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Row(
-                children: [
-                  const Text("Business name", style: TextStyle(color: Colors.grey)),
-                ],
+              SizedBox(
+                height: 15,
               ),
-            ),
-            const SizedBox(height: 5),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Row(
-                children: [
-                  const Text(
-                    "24 reviews",
-                    style: TextStyle(color: Colors.green),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            TabBar(
-              dividerColor: Colors.transparent,
-              controller: _tabController,
-              indicatorColor: Colors.green,
-              labelColor: Colors.black,
-              unselectedLabelColor: Colors.grey,
-              tabs: const [
-                Tab(text: "About"),
-                Tab(text: "Tasks"),
-                Tab(text: "Reviews"),
-              ],
-            ),
-            SizedBox( 
-              height: MediaQuery.of(context).size.height,
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
+              SizedBox(
+                height: MediaQuery.of(context).size.height,
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: const [
                         Row(
                           children: [
                             Icon(Icons.star, color: Colors.amber),
                             SizedBox(width: 5),
-                            Text("4.99", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            Text("4.99",
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.bold)),
                             SizedBox(width: 5),
-                            Text("of 20 reviews", style: TextStyle(color: Colors.grey)),
+                            Text("of 20 reviews",
+                                style: TextStyle(color: Colors.grey)),
                           ],
                         ),
                         SizedBox(height: 10),
-                        Text("United States", style: TextStyle(color: Colors.black)),
-                        Text("Business address", style: TextStyle(color: Colors.grey)),
+                        Text("United States",
+                            style: TextStyle(color: Colors.black)),
+                        Text("Business address",
+                            style: TextStyle(color: Colors.grey)),
                         SizedBox(height: 10),
-                        Text("172 project posted", style: TextStyle(color: Colors.black)),
-                        Text("70% hire rate, 1 open project", style: TextStyle(color: Colors.grey)),
+                        Text("172 project posted",
+                            style: TextStyle(color: Colors.black)),
+                        Text("70% hire rate, 1 open project",
+                            style: TextStyle(color: Colors.grey)),
                         SizedBox(height: 10),
-                        Text("57k\$ total spent", style: TextStyle(color: Colors.black)),
-                        Text("Business address", style: TextStyle(color: Colors.grey)),
+                        Text("57k\$ total spent",
+                            style: TextStyle(color: Colors.black)),
+                        Text("Business address",
+                            style: TextStyle(color: Colors.grey)),
                       ],
                     ),
-                  ),
-                  TaskDetailScreen(),
-                  const Center(child: Text("Reviews will be shown here.")),
-                ],
+                    TaskDetailScreen(),
+                    const Center(child: Text("Reviews will be shown here.")),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

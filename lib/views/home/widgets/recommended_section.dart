@@ -8,7 +8,8 @@ class RecommendedSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Recommended', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        const Text('Recommended',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         const SizedBox(height: 12),
         SizedBox(
           height: 170,
@@ -30,12 +31,16 @@ class RecommendedSection extends StatelessWidget {
                     Container(
                       height: 80,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(8),
+                          image: DecorationImage(
+                              image:
+                                  AssetImage('assets/images/recommended.png'),
+                              fit: BoxFit.cover)),
                     ),
                     const SizedBox(height: 8),
-                    const Text('Service Name', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text('Service Name',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                     const Text('\$80', style: TextStyle(color: Colors.green)),
                   ],
                 ),

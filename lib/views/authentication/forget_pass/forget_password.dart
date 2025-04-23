@@ -47,9 +47,7 @@ class ForgetPasswordScreen extends StatelessWidget {
               const SizedBox(height: 32),
               CustomButton(
                 text: 'Send Verification link',
-                onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context)=>VerificationScreen()));
-                },
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context)=>VerificationScreen())),
               ),
             ],
           ),

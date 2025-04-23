@@ -6,6 +6,7 @@ class CustomTextField extends StatelessWidget {
   final bool isPassword;
   final bool obscureText;
   final VoidCallback? onToggleObscure;
+  final String? Function(String?)? validator;
 
   const CustomTextField({
     super.key,
@@ -14,13 +15,15 @@ class CustomTextField extends StatelessWidget {
     this.isPassword = false,
     this.obscureText = false,
     this.onToggleObscure,
+    this.validator,
   });
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
+    return TextFormField(
       controller: controller,
       obscureText: isPassword ? obscureText : false,
+      validator: validator,
       decoration: InputDecoration(
         hintText: hintText,
         filled: true,
