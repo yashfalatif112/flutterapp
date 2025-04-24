@@ -3,6 +3,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homease/views/authentication/login/login.dart';
+import 'package:homease/views/authentication/signup/provider/category_provider.dart';
+import 'package:homease/views/authentication/signup/widgets/occupation_sheet.dart';
 import 'package:homease/views/bottom_bar/bottom_bar.dart';
 import 'package:homease/widgets/custom_button.dart';
 import 'package:homease/widgets/custom_textfield.dart';
@@ -11,6 +13,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
+
+import 'package:provider/provider.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -38,6 +42,9 @@ class _SignupScreenState extends State<SignupScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
+
+  List<Map<String, dynamic>> categories = [];
+  String? selectedMainCategory;
 
   void _togglePasswordVisibility() {
     setState(() {
@@ -84,12 +91,13 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<String?> _uploadImage() async {
     if (pickedFile == null) return null;
-    
+
     try {
       File file = File(pickedFile!.path!);
-      String fileName = '${DateTime.now().millisecondsSinceEpoch}_${pickedFile!.name}';
+      String fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_${pickedFile!.name}';
       Reference ref = _storage.ref().child('user_images').child(fileName);
-      
+
       await ref.putFile(file);
       String downloadUrl = await ref.getDownloadURL();
       return downloadUrl;
@@ -122,7 +130,8 @@ class _SignupScreenState extends State<SignupScreen> {
       if (imageUrl == null && errorMessage != null) return;
 
       // Step 2: Create user with email and password
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      UserCredential userCredential =
+          await _auth.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text,
       );
@@ -146,9 +155,7 @@ class _SignupScreenState extends State<SignupScreen> {
       // Navigate to bottom bar screen on successful signup
       if (!mounted) return;
       Navigator.pushReplacement(
-        context, 
-        MaterialPageRoute(builder: (context) => BottomBarScreen())
-      );
+          context, MaterialPageRoute(builder: (context) => BottomBarScreen()));
     } on FirebaseAuthException catch (e) {
       setState(() {
         _isLoading = false;
@@ -170,6 +177,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final categoriesProvider = Provider.of<CategoriesProvider>(context);
+    final categories = categoriesProvider.categories;
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -192,7 +201,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   style: TextStyle(color: Colors.black54),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Show error message if any
                 if (errorMessage != null)
                   Container(
@@ -215,7 +224,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       ],
                     ),
                   ),
-                
+
                 // Name field
                 Row(
                   children: [
@@ -228,12 +237,12 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 SizedBox(height: 5),
                 CustomTextField(
-                  hintText: '', 
+                  hintText: '',
                   controller: nameController,
                   validator: (value) => _validateField(value, 'Name'),
                 ),
                 const SizedBox(height: 12),
-                
+
                 // Email field
                 Row(
                   children: [
@@ -246,12 +255,12 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 SizedBox(height: 5),
                 CustomTextField(
-                  hintText: '', 
+                  hintText: '',
                   controller: emailController,
                   validator: _validateEmail,
                 ),
                 const SizedBox(height: 12),
-                
+
                 // Password field
                 Row(
                   children: [
@@ -272,8 +281,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   validator: _validatePassword,
                 ),
                 const SizedBox(height: 12),
-                
-                // Occupation field
+
                 Row(
                   children: [
                     Text(
@@ -285,13 +293,37 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 SizedBox(height: 5),
                 CustomTextField(
-                  hintText: '', 
+                  hintText: '',
                   controller: occupationController,
                   validator: (value) => _validateField(value, 'Occupation'),
+                  onTap: () {
+                    if (categoriesProvider.isLoading) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Loading categories...')));
+                      return;
+                    }
+
+                    if (categoriesProvider.error != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(
+                              'Error loading categories. Please try again.')));
+                      return;
+                    }
+
+                    showOccupationSheet(
+                        items:
+                            categories.map((e) => e['name'] as String).toList(),
+                        onSelected: (value) {
+                          occupationController.text = value;
+                          selectedMainCategory = value;
+                          descriptionController.clear();
+                        },
+                        context: context);
+                  },
+                  readOnly: true,
                 ),
                 const SizedBox(height: 12),
-                
-                // Description field
+
                 Row(
                   children: [
                     Text(
@@ -303,13 +335,35 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 SizedBox(height: 5),
                 CustomTextField(
-                  hintText: '', 
+                  hintText: '',
                   controller: descriptionController,
+                  readOnly: true,
                   validator: (value) => _validateField(value, 'Description'),
+                  onTap: () {
+                    if (selectedMainCategory == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('Please select an occupation first')));
+                      return;
+                    }
+
+                    final selected = categories.firstWhere(
+                      (e) => e['name'] == selectedMainCategory,
+                      orElse: () => {},
+                    );
+                    final subcategories =
+                        List<String>.from(selected['subcategories'] ?? []);
+
+                    showOccupationSheet(
+                      items: subcategories,
+                      onSelected: (value) {
+                        descriptionController.text = value;
+                      },
+                      context: context,
+                    );
+                  },
                 ),
                 const SizedBox(height: 12),
-                
-                // Address field
+
                 Row(
                   children: [
                     Text(
@@ -321,13 +375,12 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 SizedBox(height: 5),
                 CustomTextField(
-                  hintText: '', 
+                  hintText: '',
                   controller: addressController,
                   validator: (value) => _validateField(value, 'Address'),
                 ),
                 const SizedBox(height: 16),
-                
-                // Government ID upload
+
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
@@ -392,12 +445,10 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
-                // Signup button with loading indicator
                 CustomButton(
                   text: 'Signup',
                   onTap: _isLoading ? null : _signUp,
-                  // child: _isLoading 
+                  // child: _isLoading
                   //     ? SizedBox(
                   //         height: 20,
                   //         width: 20,
