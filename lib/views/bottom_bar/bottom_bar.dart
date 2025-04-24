@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:homease/views/services/all_seervices.dart';
+import 'package:homease/views/profile/provider/profile_provider.dart';
+import 'package:homease/views/services/all_services.dart';
 import 'package:homease/views/bottom_bar/provider/bottom_bar_provider.dart';
 import 'package:homease/views/home/home.dart';
 import 'package:homease/views/messages/messages.dart';
@@ -8,10 +9,17 @@ import 'package:homease/views/profile/profile.dart';
 import 'package:homease/views/wallet/wallet.dart';
 import 'package:homease/widgets/custom_drawer.dart';
 import 'package:provider/provider.dart';
+
 final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-class BottomBarScreen extends StatelessWidget {
+
+class BottomBarScreen extends StatefulWidget {
   BottomBarScreen({super.key});
 
+  @override
+  State<BottomBarScreen> createState() => _BottomBarScreenState();
+}
+
+class _BottomBarScreenState extends State<BottomBarScreen> {
   final List<Widget> _screens = [
     HomeScreen(scaffoldKey: _scaffoldKey),
     BookingsScreen(),
@@ -27,6 +35,14 @@ class BottomBarScreen extends StatelessWidget {
     'assets/icons/bottom4.svg',
     'assets/icons/bottom5.svg',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      Provider.of<ProfileProvider>(context, listen: false).fetchUserData();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

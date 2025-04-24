@@ -54,7 +54,7 @@ class OurServices extends StatelessWidget {
       children: [
         Row(
           children: const [
-            Text('Our services',
+            Text('On-Demand Categories',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             Spacer(),
             Icon(Icons.more_horiz)
@@ -66,7 +66,7 @@ class OurServices extends StatelessWidget {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: categories.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            separatorBuilder: (_, __) => const SizedBox(width: 16),
             itemBuilder: (context, index) {
               final service = categories[index]['name'] ?? '';
               return Column(

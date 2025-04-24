@@ -189,7 +189,18 @@ class _SignupScreenState extends State<SignupScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 24),
-                Image.asset('assets/logo/bubble_logo.png', height: 80),
+                Container(
+                height: 100,
+                width: 100, 
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  image: DecorationImage(
+                    image: AssetImage('assets/logo/mainlogo.png'),
+                    fit: BoxFit
+                        .cover, 
+                  ),
+                ),
+              ),
                 const SizedBox(height: 16),
                 const Text(
                   'Create Account',

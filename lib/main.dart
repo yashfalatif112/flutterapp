@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:homease/views/authentication/login/provider/login_provider.dart';
 import 'package:homease/views/authentication/signup/provider/category_provider.dart';
 import 'package:homease/views/bottom_bar/provider/bottom_bar_provider.dart';
+import 'package:homease/views/profile/provider/profile_provider.dart';
 import 'package:homease/views/services/provider/service_provider.dart';
 import 'package:homease/views/splash/splash.dart';
 import 'package:provider/provider.dart';
@@ -18,6 +19,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => BottomNavProvider()),
         ChangeNotifierProvider(create: (_) => CategoriesProvider()),
         ChangeNotifierProvider(create: (_) => ServicesProvider()..fetchServices()),
+        ChangeNotifierProvider(create: (_) => ProfileProvider()),
       ],
       child: const MyApp(),
     ),

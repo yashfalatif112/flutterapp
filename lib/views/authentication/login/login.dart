@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homease/views/authentication/forget_pass/forget_password.dart';
-import 'package:homease/views/authentication/login/provider/login_provider.dart';
 import 'package:homease/views/authentication/signup/signup.dart';
 import 'package:homease/views/bottom_bar/bottom_bar.dart';
 import 'package:homease/widgets/custom_button.dart';
 import 'package:homease/widgets/custom_textfield.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -21,7 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  
+
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _agreedToTerms = false;
@@ -61,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     if (!_agreedToTerms) {
       setState(() {
         _errorMessage = 'Please agree to the Terms & Conditions';
@@ -88,9 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
       // Navigate to home on successful login
       if (!mounted) return;
       Navigator.pushReplacement(
-        context, 
-        MaterialPageRoute(builder: (context) => BottomBarScreen())
-      );
+          context, MaterialPageRoute(builder: (context) => BottomBarScreen()));
     } on FirebaseAuthException catch (e) {
       setState(() {
         _isLoading = false;
@@ -120,7 +116,19 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             children: [
               SizedBox(height: 30),
-              Image.asset('assets/logo/bubble_logo.png', height: 100),
+              Container(
+                height: 100,
+                width: 100, 
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  image: DecorationImage(
+                    image: AssetImage('assets/logo/mainlogo.png'),
+                    fit: BoxFit
+                        .cover, 
+                  ),
+                ),
+              ),
+
               const SizedBox(height: 16),
               const Text("Login Here!",
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
@@ -131,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 30),
-              
+
               // Show error message if any
               if (_errorMessage != null)
                 Container(
@@ -154,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                 ),
-              
+
               // Email field
               Row(
                 children: [
@@ -172,7 +180,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 validator: _validateEmail,
               ),
               const SizedBox(height: 16),
-              
+
               // Password field
               Row(
                 children: [
@@ -193,7 +201,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 validator: _validatePassword,
               ),
               const SizedBox(height: 8),
-              
+
               // Forget password link
               Align(
                 alignment: Alignment.centerRight,
@@ -208,13 +216,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(color: Colors.black87)),
                 ),
               ),
-              
+
               // Terms and conditions checkbox
               Row(
                 children: [
                   Checkbox(
                     value: _agreedToTerms,
                     onChanged: _toggleTerms,
+                    activeColor: Colors.green,
                   ),
                   const Text("I agree to "),
                   GestureDetector(
@@ -225,12 +234,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              
+
               // Login button with loading indicator
               CustomButton(
                 text: "Login",
                 onTap: _isLoading ? null : _login,
-                // child: _isLoading 
+                // child: _isLoading
                 //     ? SizedBox(
                 //         height: 20,
                 //         width: 20,

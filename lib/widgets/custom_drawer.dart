@@ -15,10 +15,19 @@ class CustomDrawer extends StatelessWidget {
             SizedBox(height: 50,),
             Row(
               children: [
-                const CircleAvatar(
-                  radius: 28,
-                  backgroundImage: AssetImage('assets/logo/logo.png'),
+                SizedBox(width: 15,),
+                Container(
+                height: 40,
+                width: 40, 
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  image: DecorationImage(
+                    image: AssetImage('assets/logo/mainlogo.png'),
+                    fit: BoxFit
+                        .cover, 
+                  ),
                 ),
+              ),
                 const SizedBox(width: 10),
                 const Text(
                   "Go Home Ease",
