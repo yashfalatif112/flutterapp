@@ -1,8 +1,28 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:homease/views/book_service/confirm_booking.dart';
+import 'package:homease/views/book_service/provider/booking_provider.dart';
+import 'package:homease/views/book_service/widgets/service_card.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class BookService extends StatefulWidget {
-  const BookService({super.key});
+  final String providerId;
+  final String providerName;
+  final String? providerImage;
+  final String? providerOccupation;
+  final String? providerDescription;
+  final String? providerAddress;
+
+  const BookService(
+      {super.key,
+      required this.providerId,
+      required this.providerName,
+      this.providerImage,
+      this.providerOccupation,
+      this.providerDescription,
+      this.providerAddress});
 
   @override
   State<BookService> createState() => _BookServiceState();
@@ -10,8 +30,37 @@ class BookService extends StatefulWidget {
 
 class _BookServiceState extends State<BookService> {
   String? selectedService;
-  final String date = "February 9, 2015";
   bool isDropdownOpen = false;
+  DateTime selectedDate = DateTime.now();
+  TimeOfDay selectedTime = TimeOfDay.now();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _instructionController = TextEditingController();
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2030),
+    );
+    if (picked != null && picked != selectedDate) {
+      setState(() {
+        selectedDate = picked;
+      });
+    }
+  }
+
+  Future<void> _selectTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: selectedTime,
+    );
+    if (picked != null && picked != selectedTime) {
+      setState(() {
+        selectedTime = picked;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,12 +83,6 @@ class _BookServiceState extends State<BookService> {
             Navigator.pop(context);
           },
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications, color: Colors.black),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -47,91 +90,87 @@ class _BookServiceState extends State<BookService> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Plumbing Service',
+              Text(
+                '${widget.providerDescription} Service',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Date',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 16,
-                    ),
-                  ),
-                  Text(
-                    date,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+              SizedBox(
+                height: 10,
               ),
-              const SizedBox(height: 16),
-
-              // Service dropdown 01
-              _buildServiceCard(
-                title: "SERVICE (01)",
-                service: "Drain repair",
+              buildServiceCard(
+                title: "SERVICE",
+                service: widget.providerDescription ?? '',
                 index: 1,
-                onTap: () {
-                  // setState(() {
-                  //   if (selectedService == "Drain repair") {
-                  //     selectedService = null;
-                  //   } else {
-                  //     selectedService = "Drain repair";
-                  //   }
-                  // });
-                },
+                onTap: () {},
               ),
-
-              if (selectedService == "Drain repair")
-                Container(
-                  padding: const EdgeInsets.all(12),
+              const SizedBox(height: 12),
+              const Text(
+                'Select Date',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () => _selectDate(context),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.grey.shade300),
                   ),
-                  child: Column(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildServiceItem("Drain repair"),
-                      _buildServiceItem("Bath repair", isSelected: false),
+                      Text(
+                        DateFormat('M/d/yyyy').format(selectedDate),
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      const Icon(Icons.calendar_today, color: Colors.grey),
                     ],
                   ),
                 ),
-
-              const SizedBox(height: 12),
-
-              // Service dropdown 02
-              _buildServiceCard(
-                title: "SERVICE (02)",
-                service: "Bath repair",
-                index: 2,
-                onTap: () {},
               ),
-
-              const SizedBox(height: 12),
-
-              // Service dropdown 03
-              _buildServiceCard(
-                title: "SERVICE details (03)",
-                service: "Pipe repair",
-                index: 3,
-                onTap: () {},
-              ),
-
               const SizedBox(height: 20),
-
-              // Description
               const Text(
-                'Description',
+                'Select Time',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () => _selectTime(context),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        selectedTime.format(context),
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      const Icon(Icons.access_time, color: Colors.grey),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Enter Address',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -139,80 +178,93 @@ class _BookServiceState extends State<BookService> {
               ),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: Colors.grey.shade300),
                 ),
-                child: TextFormField(
+                child: TextField(
+                  controller: _addressController,
                   decoration: const InputDecoration(
-                    hintText: 'Lorem ipsum....',
+                    hintText: 'Street, City, Zip Code',
                     hintStyle: TextStyle(color: Colors.grey),
                     border: InputBorder.none,
                   ),
-                  maxLines: 5,
                 ),
               ),
-
               const SizedBox(height: 20),
-
-              // Project document
               const Text(
-                'Project document',
+                'Special Instruction',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 120,
-                      margin: const EdgeInsets.only(right: 8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        image: const DecorationImage(
-                          image: NetworkImage(
-                              'https://placehold.co/600x400/png?text=Plumber+Service'),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: TextField(
+                  controller: _instructionController,
+                  decoration: const InputDecoration(
+                    hintText: 'Write here...',
+                    hintStyle: TextStyle(color: Colors.grey),
+                    border: InputBorder.none,
                   ),
-                  Expanded(
-                    child: Container(
-                      height: 120,
-                      margin: const EdgeInsets.only(left: 8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        image: const DecorationImage(
-                          image: NetworkImage(
-                              'https://placehold.co/600x400/png?text=Plumber+Service'),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+                  maxLines: 5,
+                ),
               ),
-
-              const SizedBox(height: 24),
-
-              // Book Now button
+              const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ConfirmBooking(),
-                      ),
+                  onPressed: () async {
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (BuildContext context) {
+                        return const Center(
+                          child: CircularProgressIndicator(color: Colors.black,),
+                        );
+                      },
                     );
+
+                    try {
+                      final String currentUserId = await getCurrentUserId();
+
+                      Navigator.pop(context);
+
+                      final bookingProvider =
+                          Provider.of<BookingProvider>(context, listen: false);
+                      bookingProvider.setBookingData(
+                        serviceName: widget.providerDescription ?? '',
+                        selectedDate: selectedDate,
+                        selectedTime: selectedTime,
+                        address: _addressController.text,
+                        instructions: _instructionController.text,
+                        currentUserId: currentUserId,
+                        serviceProviderId: widget.providerId,
+                      );
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ConfirmBooking(),
+                        ),
+                      );
+                    } catch (e) {
+                      Navigator.pop(context);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error: ${e.toString()}')),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
@@ -220,14 +272,12 @@ class _BookServiceState extends State<BookService> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: Center(
-                    child: const Text(
-                      'Book Now',
-                      style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white),
-                    ),
+                  child: const Text(
+                    'Book Now',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
                   ),
                 ),
               ),
@@ -238,59 +288,37 @@ class _BookServiceState extends State<BookService> {
     );
   }
 
-  Widget _buildServiceCard({
-    required String title,
-    required String service,
-    required int index,
-    required VoidCallback onTap,
-  }) {
-    bool isSelected = selectedService == service;
+  Future<String> getCurrentUserId() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
-      child: ListTile(
-        title: Text(
-          title,
-          style: TextStyle(
-            color: Colors.grey.shade600,
-            fontSize: 14,
-          ),
-        ),
-        subtitle: Text(
-          service,
-          style: const TextStyle(
-            color: Colors.black,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        trailing: Icon(
-          isSelected ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-          color: Colors.black,
-        ),
-        onTap: onTap,
-      ),
-    );
+    if (currentUser == null) {
+      return '';
+    }
+
+    final authUid = currentUser.uid;
+
+    try {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(authUid)
+          .get();
+
+      if (userDoc.exists && userDoc.data()!.containsKey('uid')) {
+        return userDoc.data()!['uid'] as String;
+      } else {
+        return authUid;
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
+
+      return authUid;
+    }
   }
 
-  Widget _buildServiceItem(String service, {bool isSelected = true}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        color: isSelected ? Colors.white : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        service,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
-        ),
-      ),
-    );
+  @override
+  void dispose() {
+    _addressController.dispose();
+    _instructionController.dispose();
+    super.dispose();
   }
 }

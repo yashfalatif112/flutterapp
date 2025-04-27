@@ -65,7 +65,7 @@ class _SignupScreenState extends State<SignupScreen> {
     if (value == null || value.isEmpty) {
       return 'Email is required';
     }
-    // Basic email validation
+
     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
       return 'Enter a valid email address';
     }
@@ -125,18 +125,15 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
-      // Step 1: Upload the image
       String? imageUrl = await _uploadImage();
       if (imageUrl == null && errorMessage != null) return;
 
-      // Step 2: Create user with email and password
       UserCredential userCredential =
           await _auth.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text,
       );
 
-      // Step 3: Save user data to Firestore
       await _firestore.collection('users').doc(userCredential.user!.uid).set({
         'uid': userCredential.user!.uid,
         'name': nameController.text.trim(),
@@ -152,7 +149,6 @@ class _SignupScreenState extends State<SignupScreen> {
         _isLoading = false;
       });
 
-      // Navigate to bottom bar screen on successful signup
       if (!mounted) return;
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (context) => BottomBarScreen()));
@@ -190,17 +186,16 @@ class _SignupScreenState extends State<SignupScreen> {
               children: [
                 const SizedBox(height: 24),
                 Container(
-                height: 100,
-                width: 100, 
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  image: DecorationImage(
-                    image: AssetImage('assets/logo/mainlogo.png'),
-                    fit: BoxFit
-                        .cover, 
+                  height: 100,
+                  width: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    image: DecorationImage(
+                      image: AssetImage('assets/logo/mainlogo.png'),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
-              ),
                 const SizedBox(height: 16),
                 const Text(
                   'Create Account',
@@ -212,8 +207,6 @@ class _SignupScreenState extends State<SignupScreen> {
                   style: TextStyle(color: Colors.black54),
                 ),
                 const SizedBox(height: 24),
-
-                // Show error message if any
                 if (errorMessage != null)
                   Container(
                     padding: EdgeInsets.all(8),
@@ -235,8 +228,6 @@ class _SignupScreenState extends State<SignupScreen> {
                       ],
                     ),
                   ),
-
-                // Name field
                 Row(
                   children: [
                     Text(
@@ -253,8 +244,6 @@ class _SignupScreenState extends State<SignupScreen> {
                   validator: (value) => _validateField(value, 'Name'),
                 ),
                 const SizedBox(height: 12),
-
-                // Email field
                 Row(
                   children: [
                     Text(
@@ -271,8 +260,6 @@ class _SignupScreenState extends State<SignupScreen> {
                   validator: _validateEmail,
                 ),
                 const SizedBox(height: 12),
-
-                // Password field
                 Row(
                   children: [
                     Text(
@@ -292,7 +279,6 @@ class _SignupScreenState extends State<SignupScreen> {
                   validator: _validatePassword,
                 ),
                 const SizedBox(height: 12),
-
                 Row(
                   children: [
                     Text(
@@ -334,7 +320,6 @@ class _SignupScreenState extends State<SignupScreen> {
                   readOnly: true,
                 ),
                 const SizedBox(height: 12),
-
                 Row(
                   children: [
                     Text(
@@ -374,7 +359,6 @@ class _SignupScreenState extends State<SignupScreen> {
                   },
                 ),
                 const SizedBox(height: 12),
-
                 Row(
                   children: [
                     Text(
@@ -391,7 +375,6 @@ class _SignupScreenState extends State<SignupScreen> {
                   validator: (value) => _validateField(value, 'Address'),
                 ),
                 const SizedBox(height: 16),
-
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
@@ -459,16 +442,6 @@ class _SignupScreenState extends State<SignupScreen> {
                 CustomButton(
                   text: 'Signup',
                   onTap: _isLoading ? null : _signUp,
-                  // child: _isLoading
-                  //     ? SizedBox(
-                  //         height: 20,
-                  //         width: 20,
-                  //         child: CircularProgressIndicator(
-                  //           color: Colors.white,
-                  //           strokeWidth: 2,
-                  //         ),
-                  //       )
-                  //     : null,
                 ),
                 const SizedBox(height: 16),
                 Row(

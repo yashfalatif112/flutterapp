@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:homease/views/notifications/notifications.dart';
-import 'package:homease/views/service_details/service_details.dart';
+import 'package:homease/views/all_services/all_services.dart';
 import 'package:homease/views/services/provider/service_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -189,7 +189,8 @@ class ServiceCategory extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (_) => AllServicesScreen(
-                      
+                          categoryName: title,
+                          subcategoryName: service,
                         ),
                       ),
                     );

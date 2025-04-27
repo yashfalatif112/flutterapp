@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:homease/views/profile/provider/profile_provider.dart';
-import 'package:homease/views/services/all_services.dart';
+import 'package:homease/views/services/services.dart';
 import 'package:homease/views/bottom_bar/provider/bottom_bar_provider.dart';
 import 'package:homease/views/home/home.dart';
 import 'package:homease/views/messages/messages.dart';

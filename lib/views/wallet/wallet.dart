@@ -1,6 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:homease/views/book_service/provider/booking_provider.dart';
 import 'package:homease/views/payment_status/payment_status.dart';
 import 'package:homease/widgets/dialog.dart';
+import 'package:provider/provider.dart';
 
 class WalletScreen extends StatelessWidget {
   const WalletScreen({super.key});
@@ -13,7 +16,8 @@ class WalletScreen extends StatelessWidget {
         backgroundColor: const Color(0xFFFDFCF7),
         elevation: 0,
         leading: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
-        title: const Text('Payment Integration', style: TextStyle(color: Colors.black)),
+        title: const Text('Payment Integration',
+            style: TextStyle(color: Colors.black)),
         centerTitle: true,
         actions: [
           Padding(
@@ -37,28 +41,95 @@ class WalletScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const CardBox(text: 'Connected'),
-              const SizedBox(height: 12),
-              const CardBox(text: 'Connected'),
-              const SizedBox(height: 12),
-              const CardBox(text: 'Connected'),
-              const SizedBox(height: 12),
-              const CardBox(text: 'Connected  •••• 3054'),
-              SizedBox(height: 30,),
+              CardBox(
+                text: 'Connected',
+                onTap: () async {
+                  final bookingProvider =
+                      Provider.of<BookingProvider>(context, listen: false);
+
+                  final serviceName = bookingProvider.serviceName ?? 'N/A';
+                  final selectedDate = bookingProvider.selectedDate;
+                  final selectedTime = bookingProvider.selectedTime;
+                  final address = bookingProvider.address ?? 'N/A';
+                  final instructions = bookingProvider.instructions ?? 'N/A';
+                  final currentUserId = bookingProvider.currentUserId;
+                  final serviceProviderId = bookingProvider.serviceProviderId;
+
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) =>
+                        const Center(child: CircularProgressIndicator(color: Colors.black,)),
+                  );
+
+                  final selectedTimeFormatted = selectedTime != null
+                      ? selectedTime.format(context)
+                      : 'N/A';
+
+                  try {
+                    await FirebaseFirestore.instance
+                        .collection('bookings')
+                        .add({
+                      'serviceName': serviceName,
+                      'selectedDate': selectedDate,
+                      'selectedTime': selectedTimeFormatted,
+                      'address': address,
+                      'instructions': instructions,
+                      'currentUserId': currentUserId,
+                      'serviceProviderId': serviceProviderId,
+                      'paymentStatus': 'Approved',
+                      'createdAt': Timestamp.now(),
+                    });
+
+                    await Future.delayed(const Duration(seconds: 1));
+
+                    Navigator.pop(context);
+
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => ThankYouDialog(
+                        titleText: 'Payment Approved',
+                        subtitleText:
+                            'Your payment has been approved successfully',
+                        buttonText: 'Continue',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => PaymentStatus()),
+                          );
+                        },
+                      ),
+                    );
+                  } catch (e) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to save booking: $e')),
+                    );
+                  }
+                },
+              ),
+              SizedBox(
+                height: 30,
+              ),
               SizedBox(
                 height: 48,
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const AddNewCardScreen()),
+                      MaterialPageRoute(
+                          builder: (_) => const AddNewCardScreen()),
                     );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('Add New Card', style: TextStyle(fontSize: 16,color: Colors.white)),
+                  child: const Text('Add New Card',
+                      style: TextStyle(fontSize: 16, color: Colors.white)),
                 ),
               ),
             ],
@@ -71,20 +142,24 @@ class WalletScreen extends StatelessWidget {
 
 class CardBox extends StatelessWidget {
   final String text;
-  const CardBox({super.key, required this.text});
+  final VoidCallback? onTap;
+  const CardBox({super.key, required this.text, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 55,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      alignment: Alignment.centerLeft,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade200),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 55,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        alignment: Alignment.centerLeft,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.white,
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Text(text, style: const TextStyle(fontSize: 16)),
       ),
-      child: Text(text, style: const TextStyle(fontSize: 16)),
     );
   }
 }
@@ -101,7 +176,8 @@ class AddNewCardScreen extends StatelessWidget {
         backgroundColor: const Color(0xFFFDFCF7),
         elevation: 0,
         leading: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
-        title: const Text('Add New Card', style: TextStyle(color: Colors.black)),
+        title:
+            const Text('Add New Card', style: TextStyle(color: Colors.black)),
         centerTitle: true,
         actions: [
           Padding(
@@ -136,11 +212,18 @@ class AddNewCardScreen extends StatelessWidget {
                   children: const [
                     Icon(Icons.credit_card, color: Colors.white, size: 28),
                     SizedBox(height: 16),
-                    Text('1234 5678 8765 0876', style: TextStyle(color: Colors.white, fontSize: 20, letterSpacing: 2)),
+                    Text('1234 5678 8765 0876',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            letterSpacing: 2)),
                     SizedBox(height: 4),
-                    Text('VALID THRU    12/28', style: TextStyle(color: Colors.white70)),
+                    Text('VALID THRU    12/28',
+                        style: TextStyle(color: Colors.white70)),
                     SizedBox(height: 4),
-                    Text('ALEX', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    Text('ALEX',
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -151,37 +234,42 @@ class AddNewCardScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: const [
-                  Expanded(child: InputField(label: 'Expiry Date', hint: '05/29')),
+                  Expanded(
+                      child: InputField(label: 'Expiry Date', hint: '05/29')),
                   SizedBox(width: 12),
                   Expanded(child: InputField(label: 'CVV', hint: '***')),
                 ],
               ),
-              SizedBox(height: 30,),
+              SizedBox(
+                height: 30,
+              ),
               SizedBox(
                 height: 48,
                 child: ElevatedButton(
                   onPressed: () {
                     showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (context) => ThankYouDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => ThankYouDialog(
                         titleText: 'Card Added',
-                        subtitleText:
-                            'Your card has been added successfully',
+                        subtitleText: 'Your card has been added successfully',
                         buttonText: 'Continue',
                         onPressed: () {
                           Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => PaymentStatus()));
-                        },),
-                  );
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => PaymentStatus()));
+                        },
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('Add', style: TextStyle(fontSize: 16,color: Colors.white)),
+                  child: const Text('Add',
+                      style: TextStyle(fontSize: 16, color: Colors.white)),
                 ),
               ),
             ],
