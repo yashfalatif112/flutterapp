@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:homease/views/home/service_home.dart';
 import 'package:homease/views/profile/provider/profile_provider.dart';
 import 'package:homease/views/services/services.dart';
 import 'package:homease/views/bottom_bar/provider/bottom_bar_provider.dart';
@@ -9,6 +10,8 @@ import 'package:homease/views/profile/profile.dart';
 import 'package:homease/views/wallet/wallet.dart';
 import 'package:homease/widgets/custom_drawer.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -20,13 +23,7 @@ class BottomBarScreen extends StatefulWidget {
 }
 
 class _BottomBarScreenState extends State<BottomBarScreen> {
-  final List<Widget> _screens = [
-    HomeScreen(scaffoldKey: _scaffoldKey),
-    BookingsScreen(),
-    WalletScreen(),
-    MessageScreen(),
-    ProfileScreen(),
-  ];
+  List<Widget> _screens = [];
 
   final List<String> _icons = const [
     'assets/icons/bottom1.svg',
@@ -36,52 +33,86 @@ class _BottomBarScreenState extends State<BottomBarScreen> {
     'assets/icons/bottom5.svg',
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(() {
-      Provider.of<ProfileProvider>(context, listen: false).fetchUserData();
+  bool _isLoading = true;
+bool _isServiceProvider = false;
+
+@override
+void initState() {
+  super.initState();
+  Future.microtask(() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (doc.exists) {
+        final data = doc.data()!;
+        _isServiceProvider = data['serviceProvider'] ?? false;
+      }
+    }
+    setState(() {
+      _isLoading = false;
     });
-  }
+
+    // Also fetch profile data here if you want
+    Provider.of<ProfileProvider>(context, listen: false).fetchUserData();
+  });
+}
+
 
   @override
-  Widget build(BuildContext context) {
-    final provider = Provider.of<BottomNavProvider>(context);
+Widget build(BuildContext context) {
+  final provider = Provider.of<BottomNavProvider>(context);
 
-    return Scaffold(
-      drawer: const CustomDrawer(),
-      key: _scaffoldKey,
-      body: _screens[provider.currentIndex],
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        color: Colors.white,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: List.generate(_icons.length, (index) {
-            final isSelected = provider.currentIndex == index;
-            return GestureDetector(
-              onTap: () => provider.changeTab(index),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.green : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SvgPicture.asset(
-                      _icons[index],
-                      color: isSelected ? Colors.white : Colors.black,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
-        ),
-      ),
+  if (_isLoading) {
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
     );
   }
+
+  _screens = [
+    _isServiceProvider
+        ? ServiceHomeScreen(scaffoldKey: _scaffoldKey)
+        : HomeScreen(scaffoldKey: _scaffoldKey),
+    BookingsScreen(),
+    WalletScreen(),
+    MessageScreen(),
+    ProfileScreen(),
+  ];
+
+  return Scaffold(
+    drawer: const CustomDrawer(),
+    key: _scaffoldKey,
+    body: _screens[provider.currentIndex],
+    bottomNavigationBar: Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      color: Colors.white,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: List.generate(_icons.length, (index) {
+          final isSelected = provider.currentIndex == index;
+          return GestureDetector(
+            onTap: () => provider.changeTab(index),
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: isSelected ? Colors.green : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SvgPicture.asset(
+                    _icons[index],
+                    color: isSelected ? Colors.white : Colors.black,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+      ),
+    ),
+  );
+}
+
 }

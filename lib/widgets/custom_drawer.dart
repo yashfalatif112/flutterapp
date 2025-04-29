@@ -1,7 +1,46 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class CustomDrawer extends StatelessWidget {
+class CustomDrawer extends StatefulWidget {
   const CustomDrawer({super.key});
+
+  @override
+  State<CustomDrawer> createState() => _CustomDrawerState();
+}
+
+class _CustomDrawerState extends State<CustomDrawer> {
+  bool isServiceProvider = false;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchServiceProviderStatus();
+  }
+
+  void fetchServiceProviderStatus() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (doc.exists) {
+        setState(() {
+          isServiceProvider = doc.data()?['serviceProvider'] ?? false;
+        });
+      }
+    }
+  }
+
+  void toggleServiceProvider(bool value) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'serviceProvider': value,
+      });
+      setState(() {
+        isServiceProvider = value;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,22 +51,21 @@ class CustomDrawer extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            SizedBox(height: 50,),
+            const SizedBox(height: 50),
             Row(
               children: [
-                SizedBox(width: 15,),
+                const SizedBox(width: 15),
                 Container(
-                height: 40,
-                width: 40, 
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  image: DecorationImage(
-                    image: AssetImage('assets/logo/mainlogo.png'),
-                    fit: BoxFit
-                        .cover, 
+                  height: 40,
+                  width: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    image: const DecorationImage(
+                      image: AssetImage('assets/logo/mainlogo.png'),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
-              ),
                 const SizedBox(width: 10),
                 const Text(
                   "Go Home Ease",
@@ -36,11 +74,23 @@ class CustomDrawer extends StatelessWidget {
               ],
             ),
             _buildSectionTitle("SETTINGS"),
+            
+            ListTile(
+              leading: const Icon(Icons.radio_button_checked_sharp),
+              title: const Text('Service Provider'),
+              trailing: Switch(
+                activeColor: Colors.white,
+                activeTrackColor: Colors.green,
+                value: isServiceProvider,
+                onChanged: (value) {
+                  toggleServiceProvider(value);
+                },
+              ),
+            ),
+
             _buildDrawerItem(Icons.account_circle, "My Account"),
-            _buildDrawerItem(
-                Icons.account_balance_wallet, "Wallet and Payment"),
-            _buildDrawerItem(
-                Icons.card_giftcard, "Credits and Gift Cards"),
+            _buildDrawerItem(Icons.account_balance_wallet, "Wallet and Payment"),
+            _buildDrawerItem(Icons.card_giftcard, "Credits and Gift Cards"),
             _buildDrawerItem(Icons.receipt_long, "My Orders"),
             _buildDrawerItem(Icons.bookmark, "My Favorites"),
             _buildSectionTitle("GIFT-ON-DEMAND"),

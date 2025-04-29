@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:homease/provider/user_provider.dart';
 import 'package:homease/views/authentication/login/provider/login_provider.dart';
 import 'package:homease/views/authentication/signup/provider/category_provider.dart';
 import 'package:homease/views/book_service/provider/booking_provider.dart';
@@ -22,6 +23,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => ServicesProvider()..fetchServices()),
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
         ChangeNotifierProvider(create: (_) => BookingProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
       ],
       child: const MyApp(),
     ),
