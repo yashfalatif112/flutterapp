@@ -81,7 +81,7 @@ class BookingsScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            const _SearchBarSection(),
+            // const _SearchBarSection(),
             const SizedBox(height: 20),
             Expanded(
               child: serviceProvider.isLoading

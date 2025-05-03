@@ -6,6 +6,7 @@ import 'package:homease/views/authentication/login/provider/login_provider.dart'
 import 'package:homease/views/authentication/signup/provider/category_provider.dart';
 import 'package:homease/views/book_service/provider/booking_provider.dart';
 import 'package:homease/views/bottom_bar/provider/bottom_bar_provider.dart';
+import 'package:homease/views/bottom_bar/service_provider_status.dart';
 import 'package:homease/views/profile/provider/profile_provider.dart';
 import 'package:homease/views/services/provider/service_provider.dart';
 import 'package:homease/views/splash/splash.dart';
@@ -24,6 +25,7 @@ Future<void> main() async {
         ChangeNotifierProvider(create: (_) => ProfileProvider()),
         ChangeNotifierProvider(create: (_) => BookingProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => ServiceProviderStatus()),
       ],
       child: const MyApp(),
     ),

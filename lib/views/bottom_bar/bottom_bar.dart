@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:homease/views/bottom_bar/service_provider_status.dart';
 import 'package:homease/views/home/service_home.dart';
 import 'package:homease/views/profile/provider/profile_provider.dart';
 import 'package:homease/views/services/services.dart';
@@ -34,85 +35,92 @@ class _BottomBarScreenState extends State<BottomBarScreen> {
   ];
 
   bool _isLoading = true;
-bool _isServiceProvider = false;
 
-@override
-void initState() {
-  super.initState();
-  Future.microtask(() async {
+  @override
+  void initState() {
+    super.initState();
+    fetchUserDataAndUpdateStatus();
+  }
+
+  void fetchUserDataAndUpdateStatus() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
       final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
       if (doc.exists) {
         final data = doc.data()!;
-        _isServiceProvider = data['serviceProvider'] ?? false;
+        final isServiceProvider = data['serviceProvider'] ?? false;
+        
+        // Update the provider with the fetched status
+        if (mounted) {
+          Provider.of<ServiceProviderStatus>(context, listen: false)
+              .setStatus(isServiceProvider);
+        }
       }
     }
-    setState(() {
-      _isLoading = false;
-    });
-
-    // Also fetch profile data here if you want
-    Provider.of<ProfileProvider>(context, listen: false).fetchUserData();
-  });
-}
-
-
-  @override
-Widget build(BuildContext context) {
-  final provider = Provider.of<BottomNavProvider>(context);
-
-  if (_isLoading) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
+    
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+      Provider.of<ProfileProvider>(context, listen: false).fetchUserData();
+    }
   }
 
-  _screens = [
-    _isServiceProvider
-        ? ServiceHomeScreen(scaffoldKey: _scaffoldKey)
-        : HomeScreen(scaffoldKey: _scaffoldKey),
-    BookingsScreen(),
-    WalletScreen(),
-    MessageScreen(),
-    ProfileScreen(),
-  ];
+  @override
+  Widget build(BuildContext context) {
+    final provider = Provider.of<BottomNavProvider>(context);
+    final serviceProviderStatus = Provider.of<ServiceProviderStatus>(context);
 
-  return Scaffold(
-    drawer: const CustomDrawer(),
-    key: _scaffoldKey,
-    body: _screens[provider.currentIndex],
-    bottomNavigationBar: Container(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      color: Colors.white,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(_icons.length, (index) {
-          final isSelected = provider.currentIndex == index;
-          return GestureDetector(
-            onTap: () => provider.changeTab(index),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: isSelected ? Colors.green : Colors.transparent,
-                borderRadius: BorderRadius.circular(8),
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    _screens = [
+      serviceProviderStatus.isServiceProvider
+          ? ServiceHomeScreen(scaffoldKey: _scaffoldKey)
+          : HomeScreen(scaffoldKey: _scaffoldKey),
+      BookingsScreen(),
+      WalletScreen(),
+      MessageScreen(),
+      ProfileScreen(),
+    ];
+
+    return Scaffold(
+      drawer: const CustomDrawer(),
+      key: _scaffoldKey,
+      body: _screens[provider.currentIndex],
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        color: Colors.white,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: List.generate(_icons.length, (index) {
+            final isSelected = provider.currentIndex == index;
+            return GestureDetector(
+              onTap: () => provider.changeTab(index),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.green : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SvgPicture.asset(
+                      _icons[index],
+                      color: isSelected ? Colors.white : Colors.black,
+                    ),
+                  ],
+                ),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SvgPicture.asset(
-                    _icons[index],
-                    color: isSelected ? Colors.white : Colors.black,
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
+            );
+          }),
+        ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 }

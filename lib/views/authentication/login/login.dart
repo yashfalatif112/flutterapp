@@ -1,12 +1,15 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homease/views/authentication/forget_pass/forget_password.dart';
 import 'package:homease/views/authentication/signup/signup.dart';
 import 'package:homease/views/bottom_bar/bottom_bar.dart';
+import 'package:homease/views/bottom_bar/service_provider_status.dart';
 import 'package:homease/widgets/custom_button.dart';
 import 'package:homease/widgets/custom_textfield.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -73,8 +76,9 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      Provider.of<ServiceProviderStatus>(context, listen: false).setStatus(false);
       // Sign in with email and password
-      await _auth.signInWithEmailAndPassword(
+      final userCredential=await _auth.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text,
       );
@@ -82,6 +86,16 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _isLoading = false;
       });
+      if (userCredential.user != null) {
+        final uid = userCredential.user!.uid;
+        final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+        
+        if (doc.exists) {
+          final isServiceProvider = doc.data()?['serviceProvider'] ?? false;
+          
+          Provider.of<ServiceProviderStatus>(context, listen: false)
+              .setStatus(isServiceProvider);
+        }}
 
       // Navigate to home on successful login
       if (!mounted) return;

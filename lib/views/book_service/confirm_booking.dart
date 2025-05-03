@@ -76,7 +76,7 @@ class ConfirmBooking extends StatelessWidget {
                     Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => WalletScreen(),
+                          builder: (_) => WalletScreen(fromConfirmBooking: true,),
                         ),
                       );
                   },

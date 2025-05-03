@@ -56,8 +56,8 @@ class OurServices extends StatelessWidget {
           children: const [
             Text('On-Demand Categories',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            Spacer(),
-            Icon(Icons.more_horiz)
+            // Spacer(),
+            // Icon(Icons.more_horiz)
           ],
         ),
         const SizedBox(height: 12),

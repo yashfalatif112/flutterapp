@@ -115,31 +115,31 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search ${widget.subcategoryName}',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: Container(
-                  margin: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.filter_list, color: Colors.white),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ),
+          // Padding(
+          //   padding: const EdgeInsets.all(16.0),
+          //   child: TextField(
+          //     decoration: InputDecoration(
+          //       hintText: 'Search ${widget.subcategoryName}',
+          //       prefixIcon: const Icon(Icons.search),
+          //       suffixIcon: Container(
+          //         margin: const EdgeInsets.all(6),
+          //         decoration: BoxDecoration(
+          //           color: Colors.black,
+          //           borderRadius: BorderRadius.circular(8),
+          //         ),
+          //         child: const Icon(Icons.filter_list, color: Colors.white),
+          //       ),
+          //       filled: true,
+          //       fillColor: Colors.white,
+          //       contentPadding:
+          //           const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+          //       border: OutlineInputBorder(
+          //         borderRadius: BorderRadius.circular(12),
+          //         borderSide: BorderSide.none,
+          //       ),
+          //     ),
+          //   ),
+          // ),
           Expanded(
             child: _isLoading
                 ? Center(

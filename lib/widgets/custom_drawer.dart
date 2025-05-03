@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:homease/views/authentication/login/login.dart';
+import 'package:homease/views/bottom_bar/service_provider_status.dart';
+import 'package:provider/provider.dart';
 
 class CustomDrawer extends StatefulWidget {
   const CustomDrawer({super.key});
@@ -10,40 +13,62 @@ class CustomDrawer extends StatefulWidget {
 }
 
 class _CustomDrawerState extends State<CustomDrawer> {
-  bool isServiceProvider = false;
-
   @override
   void initState() {
     super.initState();
-    fetchServiceProviderStatus();
-  }
-
-  void fetchServiceProviderStatus() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-      if (doc.exists) {
-        setState(() {
-          isServiceProvider = doc.data()?['serviceProvider'] ?? false;
-        });
-      }
-    }
   }
 
   void toggleServiceProvider(bool value) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
+      // Update in Firebase
       await FirebaseFirestore.instance.collection('users').doc(uid).update({
         'serviceProvider': value,
       });
-      setState(() {
-        isServiceProvider = value;
-      });
+      
+      // Update in provider
+      Provider.of<ServiceProviderStatus>(context, listen: false)
+          .setStatus(value);
+    }
+  }
+  
+  Future<void> handleLogout(BuildContext context) async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Confirm Logout"),
+        content: const Text("Are you sure you want to logout?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("No"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Yes"),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout == true) {
+      // Sign out from Firebase
+      await FirebaseAuth.instance.signOut();
+      
+      // Navigate to login screen
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Use the provider directly for the switch
+    final serviceProviderStatus = Provider.of<ServiceProviderStatus>(context);
+    
     return Drawer(
       backgroundColor: Colors.white,
       child: Container(
@@ -74,20 +99,19 @@ class _CustomDrawerState extends State<CustomDrawer> {
               ],
             ),
             _buildSectionTitle("SETTINGS"),
-            
             ListTile(
               leading: const Icon(Icons.radio_button_checked_sharp),
               title: const Text('Service Provider'),
               trailing: Switch(
                 activeColor: Colors.white,
                 activeTrackColor: Colors.green,
-                value: isServiceProvider,
+                value: serviceProviderStatus.isServiceProvider,
                 onChanged: (value) {
                   toggleServiceProvider(value);
                 },
               ),
             ),
-
+            // Rest of your drawer items
             _buildDrawerItem(Icons.account_circle, "My Account"),
             _buildDrawerItem(Icons.account_balance_wallet, "Wallet and Payment"),
             _buildDrawerItem(Icons.card_giftcard, "Credits and Gift Cards"),
@@ -106,7 +130,11 @@ class _CustomDrawerState extends State<CustomDrawer> {
             _buildDrawerItem(Icons.group, "About Us"),
             _buildDrawerItem(Icons.article, "Terms & Conditions"),
             _buildDrawerItem(Icons.privacy_tip, "Privacy Policy"),
-            _buildDrawerItem(Icons.logout, "Logout"),
+            _buildDrawerItem(
+              Icons.logout,
+              "Logout",
+              () => handleLogout(context),
+            ),
           ],
         ),
       ),
@@ -123,11 +151,11 @@ class _CustomDrawerState extends State<CustomDrawer> {
     );
   }
 
-  Widget _buildDrawerItem(IconData icon, String title) {
+  Widget _buildDrawerItem(IconData icon, String title, [VoidCallback? onTap]) {
     return ListTile(
       leading: Icon(icon),
       title: Text(title),
-      onTap: () {},
+      onTap: onTap,
     );
   }
 }
