@@ -8,6 +8,7 @@ class BookingProvider extends ChangeNotifier {
   String? _instructions;
   String? _currentUserId;
   String? _serviceProviderId;
+  double? _price; 
 
   String? get serviceName => _serviceName;
   DateTime? get selectedDate => _selectedDate;
@@ -16,6 +17,7 @@ class BookingProvider extends ChangeNotifier {
   String? get instructions => _instructions;
   String? get currentUserId => _currentUserId;
   String? get serviceProviderId => _serviceProviderId;
+  double? get price => _price; 
 
   void setBookingData({
     required String serviceName,
@@ -25,6 +27,7 @@ class BookingProvider extends ChangeNotifier {
     required String instructions,
     required String currentUserId,
     required String serviceProviderId,
+    double? price, 
   }) {
     _serviceName = serviceName;
     _selectedDate = selectedDate;
@@ -33,7 +36,7 @@ class BookingProvider extends ChangeNotifier {
     _instructions = instructions;
     _currentUserId = currentUserId;
     _serviceProviderId = serviceProviderId;
-
+    _price = price; 
     notifyListeners();
   }
 
@@ -45,7 +48,7 @@ class BookingProvider extends ChangeNotifier {
     _instructions = null;
     _currentUserId = null;
     _serviceProviderId = null;
-
+    _price = null; 
     notifyListeners();
   }
 

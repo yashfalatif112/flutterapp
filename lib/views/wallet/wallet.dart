@@ -2,11 +2,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:homease/provider/user_provider.dart';
+import 'package:homease/services/paypal_service.dart';
+import 'package:homease/services/stripe_service.dart';
 import 'package:homease/views/book_service/provider/booking_provider.dart';
 import 'package:homease/views/bottom_bar/bottom_bar.dart';
 import 'package:homease/views/payment_status/payment_status.dart';
+import 'package:homease/views/wallet/add_card.dart';
+import 'package:homease/views/wallet/widgets/card_box.dart';
+import 'package:homease/views/wallet/widgets/paypal_payment_handler.dart';
 import 'package:homease/widgets/dialog.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 class WalletScreen extends StatefulWidget {
   final bool? fromConfirmBooking;
@@ -20,6 +26,8 @@ class _WalletScreenState extends State<WalletScreen> {
   String? currentUserId;
   bool isLoading = true;
   List<Map<String, dynamic>> cards = [];
+  bool isProcessingPayment = false;
+  final PayPalService _paypalService = PayPalService(); // Add PayPal service
 
   @override
   void initState() {
@@ -65,6 +73,291 @@ class _WalletScreenState extends State<WalletScreen> {
         SnackBar(content: Text('Failed to fetch cards: $e')),
       );
     }
+  }
+
+  void _showPaymentMethodDialog(Map<String, dynamic> card) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text('Select Payment Method', textAlign: TextAlign.center),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: SvgPicture.asset('assets/icons/stripe.svg',
+                  width: 32, height: 32),
+              title: const Text('Pay with Stripe'),
+              onTap: () {
+                Navigator.pop(context);
+                _processStripePayment(card);
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: SvgPicture.asset('assets/icons/paypal.svg',
+                  width: 32, height: 32),
+              title: const Text('Pay with PayPal'),
+              onTap: () {
+                Navigator.pop(context);
+                _processPayPalPayment(card);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // New method for PayPal payment
+  Future<void> _processPayPalPayment(Map<String, dynamic> card) async {
+    final bookingProvider =
+        Provider.of<BookingProvider>(context, listen: false);
+
+    if (bookingProvider.price == null || bookingProvider.price! <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid payment amount')),
+      );
+      return;
+    }
+
+    setState(() {
+      isProcessingPayment = true;
+    });
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: Colors.blue),
+      ),
+    );
+
+    final String uuid = const Uuid().v4();
+    // These URLs should be registered in your PayPal developer account
+    // Using app scheme URLs that your app can handle is an alternative approach
+    final String returnUrl = 'homease://payment/success';
+    final String cancelUrl = 'homease://payment/cancel';
+
+    try {
+      final result = await _paypalService.createPayment(
+        amount: bookingProvider.price!,
+        currency: 'USD',
+        returnUrl: returnUrl,
+        cancelUrl: cancelUrl,
+        description: 'Payment for ${bookingProvider.serviceName ?? "services"}',
+      );
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      if (result['success'] == true && result['approvalUrl'] != null) {
+        final paymentId = result['paymentId'];
+        
+        // Show PayPal WebView for payment
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PayPalWebView(
+              approvalUrl: result['approvalUrl'],
+              returnUrl: returnUrl,
+              cancelUrl: cancelUrl,
+              onSuccess: (paymentId, payerId) {
+                Navigator.pop(context); // Close the WebView
+                
+                // Handle successful payment with the PayPalPaymentHandler
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PayPalPaymentHandler(
+                      paymentId: paymentId,
+                      payerId: payerId,
+                      onPaymentComplete: (success, data) async {
+                        if (success) {
+                          await _saveBookingToFirebase(card, 'Approved', 'PayPal');
+                        }
+                      },
+                    ),
+                  ),
+                );
+              },
+              onCancel: () {
+                Navigator.pop(context);
+                _showPaymentFailedDialog('Payment was cancelled');
+              },
+              onError: () {
+                Navigator.pop(context);
+                _showPaymentFailedDialog('An error occurred during payment');
+              },
+            ),
+          ),
+        );
+      } else {
+        _showPaymentFailedDialog(
+            result['message'] ?? 'Failed to create PayPal payment');
+      }
+    } catch (e) {
+      Navigator.pop(context);
+      _showPaymentFailedDialog('Error: ${e.toString()}');
+    } finally {
+      setState(() {
+        isProcessingPayment = false;
+      });
+    }
+  }
+
+  Future<void> _processStripePayment(Map<String, dynamic> card) async {
+    final bookingProvider =
+        Provider.of<BookingProvider>(context, listen: false);
+
+    if (bookingProvider.price == null || bookingProvider.price! <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invalid payment amount')),
+      );
+      return;
+    }
+
+    setState(() {
+      isProcessingPayment = true;
+    });
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: Colors.green),
+      ),
+    );
+
+    try {
+      final stripeService = StripeService();
+
+      final initResponse = await stripeService.initPaymentSheet(
+        amount: (bookingProvider.price! * 100).round(),
+        currency: 'usd',
+        customerName: card['cardName'] ?? 'Customer',
+      );
+
+      if (!initResponse.success) {
+        Navigator.pop(context);
+        _showPaymentFailedDialog(
+            initResponse.message ?? 'Payment initialization failed');
+        return;
+      }
+
+      final result = await stripeService.presentPaymentSheet();
+
+      Navigator.pop(context);
+
+      if (result.success) {
+        await _saveBookingToFirebase(card, 'Approved', 'Stripe');
+      } else {
+        _showPaymentFailedDialog(result.message ?? 'Payment processing failed');
+      }
+    } catch (e) {
+      Navigator.pop(context);
+      _showPaymentFailedDialog('Error: ${e.toString()}');
+    } finally {
+      setState(() {
+        isProcessingPayment = false;
+      });
+    }
+  }
+
+  Future<void> _saveBookingToFirebase(
+      Map<String, dynamic> card, String paymentStatus, String paymentType) async {
+    final bookingProvider =
+        Provider.of<BookingProvider>(context, listen: false);
+
+    final serviceName = bookingProvider.serviceName ?? 'N/A';
+    final selectedDate = bookingProvider.selectedDate;
+    final selectedTime = bookingProvider.selectedTime;
+    final address = bookingProvider.address ?? 'N/A';
+    final instructions = bookingProvider.instructions ?? 'N/A';
+    final currentUserId = bookingProvider.currentUserId;
+    final serviceProviderId = bookingProvider.serviceProviderId;
+    final price = bookingProvider.price;
+
+    final selectedTimeFormatted =
+        selectedTime != null ? selectedTime.format(context) : 'N/A';
+
+    final cardNumber = card['cardNumber'] ?? '';
+    final last4Digits = cardNumber.length > 4
+        ? cardNumber.substring(cardNumber.length - 4)
+        : cardNumber;
+
+    try {
+      await FirebaseFirestore.instance.collection('bookings').add({
+        'serviceName': serviceName,
+        'selectedDate': selectedDate,
+        'selectedTime': selectedTimeFormatted,
+        'address': address,
+        'instructions': instructions,
+        'currentUserId': currentUserId,
+        'serviceProviderId': serviceProviderId,
+        'status': "pending",
+        'price': price,
+        'paymentStatus': paymentStatus,
+        'paymentMethod': {
+          'type': paymentType,
+          'cardName': card['cardName'],
+          'last4Digits': paymentType == 'PayPal' ? 'PayPal' : last4Digits,
+        },
+        'createdAt': Timestamp.now(),
+      });
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => ThankYouDialog(
+          titleText: 'Payment Approved',
+          subtitleText: 'Your payment has been approved successfully',
+          buttonText: 'Continue',
+          onPressed: () {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => BottomBarScreen()),
+              (route) => false,
+            );
+            Provider.of<BookingProvider>(context).clearBookingData();
+          },
+        ),
+      );
+    } catch (e) {
+      _showPaymentFailedDialog('Failed to save booking: $e');
+    }
+  }
+
+  void _showPaymentFailedDialog(String errorMessage) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Column(
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.close,
+                color: Colors.red,
+                size: 32,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text('Payment Failed', textAlign: TextAlign.center),
+          ],
+        ),
+        content: Text(
+          errorMessage,
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
   }
 
   @override
@@ -145,87 +438,8 @@ class _WalletScreenState extends State<WalletScreen> {
                     return CardBox(
                       text: 'Connected **** $last4Digits',
                       onTap: widget.fromConfirmBooking == true
-                          ? () async {
-                              final bookingProvider =
-                                  Provider.of<BookingProvider>(context,
-                                      listen: false);
-
-                              final serviceName =
-                                  bookingProvider.serviceName ?? 'N/A';
-                              final selectedDate = bookingProvider.selectedDate;
-                              final selectedTime = bookingProvider.selectedTime;
-                              final address = bookingProvider.address ?? 'N/A';
-                              final instructions =
-                                  bookingProvider.instructions ?? 'N/A';
-                              final currentUserId =
-                                  bookingProvider.currentUserId;
-                              final serviceProviderId =
-                                  bookingProvider.serviceProviderId;
-
-                              showDialog(
-                                context: context,
-                                barrierDismissible: false,
-                                builder: (context) => const Center(
-                                    child: CircularProgressIndicator(
-                                        color: Colors.black)),
-                              );
-
-                              final selectedTimeFormatted = selectedTime != null
-                                  ? selectedTime.format(context)
-                                  : 'N/A';
-
-                              try {
-                                await FirebaseFirestore.instance
-                                    .collection('bookings')
-                                    .add({
-                                  'serviceName': serviceName,
-                                  'selectedDate': selectedDate,
-                                  'selectedTime': selectedTimeFormatted,
-                                  'address': address,
-                                  'instructions': instructions,
-                                  'currentUserId': currentUserId,
-                                  'serviceProviderId': serviceProviderId,
-                                  'status': "pending",
-                                  'paymentStatus': 'Approved',
-                                  'paymentMethod': {
-                                    'cardName': card['cardName'],
-                                    'last4Digits': last4Digits,
-                                  },
-                                  'createdAt': Timestamp.now(),
-                                });
-
-                                await Future.delayed(
-                                    const Duration(seconds: 1));
-
-                                Navigator.pop(context);
-
-                                showDialog(
-                                  context: context,
-                                  barrierDismissible: false,
-                                  builder: (context) => ThankYouDialog(
-                                    titleText: 'Payment Approved',
-                                    subtitleText:
-                                        'Your payment has been approved successfully',
-                                    buttonText: 'Continue',
-                                    onPressed: () {
-                                      Navigator.pushAndRemoveUntil(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                BottomBarScreen()),
-                                        (route) => false,
-                                      );
-                                    },
-                                  ),
-                                );
-                              } catch (e) {
-                                Navigator.pop(context);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content:
-                                          Text('Failed to save booking: $e')),
-                                );
-                              }
+                          ? () {
+                              _showPaymentMethodDialog(card);
                             }
                           : null,
                     );
@@ -258,400 +472,6 @@ class _WalletScreenState extends State<WalletScreen> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class CardBox extends StatelessWidget {
-  final String text;
-  final VoidCallback? onTap;
-  const CardBox({super.key, required this.text, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 55,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        alignment: Alignment.centerLeft,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.white,
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Text(text, style: const TextStyle(fontSize: 16)),
-      ),
-    );
-  }
-}
-
-class AddNewCardScreen extends StatefulWidget {
-  final String? currentUserId;
-  final VoidCallback onCardAdded;
-
-  const AddNewCardScreen({
-    super.key,
-    required this.currentUserId,
-    required this.onCardAdded,
-  });
-
-  @override
-  State<AddNewCardScreen> createState() => _AddNewCardScreenState();
-}
-
-class _AddNewCardScreenState extends State<AddNewCardScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _cardNameController = TextEditingController();
-  final TextEditingController _cardNumberController = TextEditingController();
-  final TextEditingController _expiryDateController = TextEditingController();
-  final TextEditingController _cvvController = TextEditingController();
-  bool _isLoading = false;
-
-  @override
-  void dispose() {
-    _cardNameController.dispose();
-    _cardNumberController.dispose();
-    _expiryDateController.dispose();
-    _cvvController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _saveCardToFirebase() async {
-    if (_formKey.currentState?.validate() != true ||
-        widget.currentUserId == null) {
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      // Get the user document reference
-      final userRef = FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.currentUserId);
-
-      // Create a new card object
-      final newCard = {
-        'cardName': _cardNameController.text.trim(),
-        'cardNumber': _cardNumberController.text.replaceAll(' ', '').trim(),
-        'expiryDate': _expiryDateController.text.trim(),
-        'cvv': _cvvController.text.trim(),
-        'addedAt': Timestamp.now(),
-      };
-
-      // Get the current user document
-      final userDoc = await userRef.get();
-
-      if (userDoc.exists) {
-        // If user already has cards, append the new one
-        if (userDoc.data()!.containsKey('cards')) {
-          await userRef.update({
-            'cards': FieldValue.arrayUnion([newCard])
-          });
-        } else {
-          // If user doesn't have cards yet, create the array
-          await userRef.update({
-            'cards': [newCard]
-          });
-        }
-      } else {
-        // If user document doesn't exist yet (shouldn't happen normally)
-        await userRef.set({
-          'cards': [newCard]
-        });
-      }
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      // Show success dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => ThankYouDialog(
-          titleText: 'Card Added',
-          subtitleText: 'Your card has been added successfully',
-          buttonText: 'Continue',
-          onPressed: () {
-            widget.onCardAdded();
-            Navigator.pop(context); // Close dialog
-            Navigator.pop(context); // Go back to wallet screen
-          },
-        ),
-      );
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to add card: $e')),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      backgroundColor: const Color(0xFFFDFCF7),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFFDFCF7),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title:
-            const Text('Add New Card', style: TextStyle(color: Colors.black)),
-        centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Container(
-              width: 40,
-              height: 40,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade400),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.more_vert, color: Colors.black),
-            ),
-          )
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.green,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.credit_card,
-                          color: Colors.white, size: 28),
-                      const SizedBox(height: 16),
-                      Text(
-                        _cardNumberController.text.isEmpty
-                            ? '1234 5678 8765 0876'
-                            : _cardNumberController.text,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            letterSpacing: 2),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'VALID THRU    ${_expiryDateController.text.isEmpty ? '12/28' : _expiryDateController.text}',
-                        style: const TextStyle(color: Colors.white70),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _cardNameController.text.isEmpty
-                            ? 'CARD HOLDER'
-                            : _cardNameController.text.toUpperCase(),
-                        style: const TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                TextFormField(
-                  controller: _cardNameController,
-                  decoration: InputDecoration(
-                    labelText: 'Card Name',
-                    hintText: 'Card Holder Name',
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter card holder name';
-                    }
-                    return null;
-                  },
-                  onChanged: (value) {
-                    setState(() {});
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _cardNumberController,
-                  decoration: InputDecoration(
-                    labelText: 'Card Number',
-                    hintText: '1234 5678 9012 3456',
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter card number';
-                    }
-                    // Remove spaces and check if it's a valid card format (simplified)
-                    final cleanNumber = value.replaceAll(' ', '');
-                    if (cleanNumber.length < 13 || cleanNumber.length > 19) {
-                      return 'Please enter a valid card number';
-                    }
-                    return null;
-                  },
-                  onChanged: (value) {
-                    setState(() {});
-                  },
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _expiryDateController,
-                        decoration: InputDecoration(
-                          labelText: 'Expiry Date',
-                          hintText: 'MM/YY',
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Required';
-                          }
-                          // Simple MM/YY validation
-                          if (!RegExp(r'^\d{2}/\d{2}$').hasMatch(value)) {
-                            return 'Use MM/YY format';
-                          }
-                          return null;
-                        },
-                        onChanged: (value) {
-                          setState(() {});
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _cvvController,
-                        decoration: InputDecoration(
-                          labelText: 'CVV',
-                          hintText: '123',
-                          filled: true,
-                          fillColor: Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                        ),
-                        keyboardType: TextInputType.number,
-                        obscureText: true,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Required';
-                          }
-                          if (value.length < 3 || value.length > 4) {
-                            return 'Invalid CVV';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 30),
-                SizedBox(
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _saveCardToFirebase,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                    ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('Add',
-                            style:
-                                TextStyle(fontSize: 16, color: Colors.white)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class InputField extends StatelessWidget {
-  final String label;
-  final String hint;
-
-  const InputField({super.key, required this.label, required this.hint});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-        const SizedBox(height: 6),
-        TextField(
-          decoration: InputDecoration(
-            hintText: hint,
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

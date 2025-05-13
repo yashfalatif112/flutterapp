@@ -66,7 +66,6 @@ class MessageScreen extends StatelessWidget {
                       final chat = chats[index];
                       if (chat['userName'] == null ||
                           chat['userName'].isEmpty) {
-                        // Fetch missing user data from users collection
                         FirebaseFirestore.instance
                             .collection('users')
                             .doc(chat.id)
@@ -80,7 +79,7 @@ class MessageScreen extends StatelessWidget {
                                 .doc(chat.id)
                                 .update({
                               'userName': userData['name'] ??
-                                  'User', // Use name from Firestore
+                                  'User', 
                               'userImage': userData['profilePic'] ?? '',
                             });
                           }
@@ -128,11 +127,11 @@ class MessageScreen extends StatelessWidget {
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
                                               color: Colors.black)),
-                                      const SizedBox(height: 4),
-                                      Text(chat['lastMessage'] ?? '',
-                                          style: const TextStyle(
-                                              color: Colors.black,
-                                              fontSize: 13)),
+                                      // const SizedBox(height: 4),
+                                      // Text(chat['lastMessage'] ?? '',
+                                      //     style: const TextStyle(
+                                      //         color: Colors.black,
+                                      //         fontSize: 13)),
                                     ],
                                   ),
                                 ),

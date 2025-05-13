@@ -14,15 +14,18 @@ class BookService extends StatefulWidget {
   final String? providerOccupation;
   final String? providerDescription;
   final String? providerAddress;
+  final double? servicePrice;
 
-  const BookService(
-      {super.key,
-      required this.providerId,
-      required this.providerName,
-      this.providerImage,
-      this.providerOccupation,
-      this.providerDescription,
-      this.providerAddress});
+  const BookService({
+    super.key,
+    required this.providerId,
+    required this.providerName,
+    this.providerImage,
+    this.providerOccupation,
+    this.providerDescription,
+    this.providerAddress,
+    this.servicePrice,
+  });
 
   @override
   State<BookService> createState() => _BookServiceState();
@@ -106,6 +109,32 @@ class _BookServiceState extends State<BookService> {
                 index: 1,
                 onTap: () {},
               ),
+              if (widget.servicePrice != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.attach_money, color: Colors.green),
+                        SizedBox(width: 8),
+                        Text(
+                          "Price: \$${widget.servicePrice!.toStringAsFixed(2)}",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               const SizedBox(height: 12),
               const Text(
                 'Select Date',
@@ -230,7 +259,9 @@ class _BookServiceState extends State<BookService> {
                       barrierDismissible: false,
                       builder: (BuildContext context) {
                         return const Center(
-                          child: CircularProgressIndicator(color: Colors.black,),
+                          child: CircularProgressIndicator(
+                            color: Colors.black,
+                          ),
                         );
                       },
                     );
@@ -250,6 +281,7 @@ class _BookServiceState extends State<BookService> {
                         instructions: _instructionController.text,
                         currentUserId: currentUserId,
                         serviceProviderId: widget.providerId,
+                        price: widget.servicePrice,
                       );
 
                       Navigator.push(

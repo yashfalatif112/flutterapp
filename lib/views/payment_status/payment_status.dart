@@ -19,7 +19,7 @@ class _PaymentStatusState extends State<PaymentStatus> {
   }
 
   Future<String> getCurrentUserId() async {
-    final userUid = FirebaseAuth.instance.currentUser?.uid;
+    final userUid = FirebaseAuth.instance.currentUser?.uid; 
 
     if (userUid == null) {
       return '';
@@ -29,7 +29,7 @@ class _PaymentStatusState extends State<PaymentStatus> {
         await FirebaseFirestore.instance.collection('users').doc(userUid).get();
 
     if (userDoc.exists) {
-      return userDoc.data()?['uid'] ?? '';
+      return userDoc.data()?['uid'] ?? ''; 
     } else {
       return '';
     }

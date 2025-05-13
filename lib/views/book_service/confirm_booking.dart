@@ -13,10 +13,11 @@ class ConfirmBooking extends StatelessWidget {
     final serviceName = bookingProvider.serviceName ?? 'N/A';
     final selectedDate = bookingProvider.selectedDate;
     final selectedTime = bookingProvider.selectedTime;
+    final price = bookingProvider.price ?? 'N/A';
     final address = bookingProvider.address ?? 'N/A';
     final instructions = bookingProvider.instructions ?? 'N/A';
-    final currentUserId = bookingProvider.currentUserId;
-    final serviceProviderId = bookingProvider.serviceProviderId;
+    // final currentUserId = bookingProvider.currentUserId;
+    // final serviceProviderId = bookingProvider.serviceProviderId;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5E9),
@@ -67,6 +68,8 @@ class ConfirmBooking extends StatelessWidget {
               const Divider(),
               _buildInfoRow('Special Instructions', instructions),
               const Divider(),
+              _buildInfoRow('Price', price.toString()),
+              const Divider(),
               const SizedBox(height: 30),
               SizedBox(
                 width: double.infinity,
@@ -74,11 +77,13 @@ class ConfirmBooking extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => WalletScreen(fromConfirmBooking: true,),
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => WalletScreen(
+                          fromConfirmBooking: true,
                         ),
-                      );
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,

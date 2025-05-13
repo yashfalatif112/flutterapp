@@ -20,6 +20,7 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _serviceProviders = [];
   String? _error;
+  double? _servicePrice;
 
   @override
   void initState() {
@@ -44,8 +45,19 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
           .doc(widget.subcategoryName)
           .get();
 
-      if (!subcategoryDoc.exists ||
-          !subcategoryDoc.data()!.containsKey('users')) {
+      if (!subcategoryDoc.exists) {
+        setState(() {
+          _isLoading = false;
+          _serviceProviders = [];
+        });
+        return;
+      }
+
+      if (subcategoryDoc.data()!.containsKey('price')) {
+        _servicePrice = (subcategoryDoc.data()!['price'] as num).toDouble();
+      }
+
+      if (!subcategoryDoc.data()!.containsKey('users')) {
         setState(() {
           _isLoading = false;
           _serviceProviders = [];
@@ -115,31 +127,6 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
       ),
       body: Column(
         children: [
-          // Padding(
-          //   padding: const EdgeInsets.all(16.0),
-          //   child: TextField(
-          //     decoration: InputDecoration(
-          //       hintText: 'Search ${widget.subcategoryName}',
-          //       prefixIcon: const Icon(Icons.search),
-          //       suffixIcon: Container(
-          //         margin: const EdgeInsets.all(6),
-          //         decoration: BoxDecoration(
-          //           color: Colors.black,
-          //           borderRadius: BorderRadius.circular(8),
-          //         ),
-          //         child: const Icon(Icons.filter_list, color: Colors.white),
-          //       ),
-          //       filled: true,
-          //       fillColor: Colors.white,
-          //       contentPadding:
-          //           const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
-          //       border: OutlineInputBorder(
-          //         borderRadius: BorderRadius.circular(12),
-          //         borderSide: BorderSide.none,
-          //       ),
-          //     ),
-          //   ),
-          // ),
           Expanded(
             child: _isLoading
                 ? Center(
@@ -164,6 +151,7 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
                                     provider['description'] ?? 'No description',
                                 address: provider['address'] ?? 'Unknown',
                                 userId: provider['id'],
+                                servicePrice: _servicePrice,
                               );
                             },
                           ),
@@ -181,16 +169,18 @@ class ServiceTile extends StatelessWidget {
   final String description;
   final String address;
   final String userId;
+  final double? servicePrice;
 
   const ServiceTile({
-    Key? key,
+    super.key,
     required this.name,
     this.imageUrl,
     required this.occupation,
     required this.description,
     required this.address,
     required this.userId,
-  }) : super(key: key);
+    this.servicePrice,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -206,6 +196,7 @@ class ServiceTile extends StatelessWidget {
               providerOccupation: occupation,
               providerDescription: description,
               providerAddress: address,
+              servicePrice: servicePrice,
             ),
           ),
         );
@@ -251,6 +242,18 @@ class ServiceTile extends StatelessWidget {
                       ),
                     ],
                   ),
+                  // if (servicePrice != null)
+                  //   Padding(
+                  //     padding: const EdgeInsets.only(top: 4.0),
+                  //     child: Text(
+                  //       "Price: \$${servicePrice!.toStringAsFixed(2)}",
+                  //       style: const TextStyle(
+                  //         fontSize: 14,
+                  //         fontWeight: FontWeight.w500,
+                  //         color: Colors.green,
+                  //       ),
+                  //     ),
+                  //   ),
                 ],
               ),
             ),
@@ -262,63 +265,58 @@ class ServiceTile extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             GestureDetector(
-  onTap: () async {
-    // Get current user info from Firestore
-    final currentUser = FirebaseAuth.instance.currentUser!;
-    final userData = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(currentUser.uid)
-        .get();
-    
-    // Create chat entries for both users if they don't exist
-    final ids = [currentUser.uid, userId];
-    ids.sort();
-    final chatId = ids.join('_');
-    
-    // Set up chat entry for the current user
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(currentUser.uid)
-        .collection('chats')
-        .doc(userId)
-        .set({
-      'chatId': chatId,
-      'userName': name,
-      'userImage': imageUrl ?? '',
-      'lastMessage': '',
-      'timestamp': FieldValue.serverTimestamp(),
-      'unreadCount': 0,
-    }, SetOptions(merge: true));
-    
-    // Set up chat entry for the other user
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection('chats')
-        .doc(currentUser.uid)
-        .set({
-      'chatId': chatId,
-      'userName': userData.data()?['name'] ?? 'User',  // Use name from Firestore
-      'userImage': userData.data()?['profilePic'] ?? '',
-      'lastMessage': '',
-      'timestamp': FieldValue.serverTimestamp(),
-      'unreadCount': 0,
-    }, SetOptions(merge: true));
-    
-    // Navigate to chat screen
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChatScreen(
-          otherUserId: userId,
-          otherUserName: name,
-          otherUserImage: imageUrl,
-        ),
-      ),
-    );
-  },
-  child: const Icon(Icons.chat_sharp, color: Colors.black),
-),
+              onTap: () async {
+                final currentUser = FirebaseAuth.instance.currentUser!;
+                final userData = await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(currentUser.uid)
+                    .get();
+
+                final ids = [currentUser.uid, userId];
+                ids.sort();
+                final chatId = ids.join('_');
+
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(currentUser.uid)
+                    .collection('chats')
+                    .doc(userId)
+                    .set({
+                  'chatId': chatId,
+                  'userName': name,
+                  'userImage': imageUrl ?? '',
+                  'lastMessage': '',
+                  'timestamp': FieldValue.serverTimestamp(),
+                  'unreadCount': 0,
+                }, SetOptions(merge: true));
+
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(userId)
+                    .collection('chats')
+                    .doc(currentUser.uid)
+                    .set({
+                  'chatId': chatId,
+                  'userName': userData.data()?['name'] ?? 'User',
+                  'userImage': userData.data()?['profilePic'] ?? '',
+                  'lastMessage': '',
+                  'timestamp': FieldValue.serverTimestamp(),
+                  'unreadCount': 0,
+                }, SetOptions(merge: true));
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChatScreen(
+                      otherUserId: userId,
+                      otherUserName: name,
+                      otherUserImage: imageUrl,
+                    ),
+                  ),
+                );
+              },
+              child: const Icon(Icons.chat_sharp, color: Colors.black),
+            ),
             const SizedBox(
               width: 5,
             )

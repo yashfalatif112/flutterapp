@@ -1,6 +1,10 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:homease/services/call_manager.dart';
+import 'package:homease/services/call_notification_handler.dart';
+import 'package:homease/views/messages/video_call.dart';
 
 class ChatScreen extends StatefulWidget {
   final String otherUserId;
@@ -8,11 +12,11 @@ class ChatScreen extends StatefulWidget {
   final String? otherUserImage;
 
   const ChatScreen({
-    Key? key,
+    super.key,
     required this.otherUserId,
     required this.otherUserName,
     this.otherUserImage,
-  }) : super(key: key);
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -21,138 +25,185 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final user = FirebaseAuth.instance.currentUser!;
-  
+
   late String chatId;
+  StreamSubscription<DocumentSnapshot>? _callSub;
 
- @override
-void initState() {
-  super.initState();
-  // chatId will be combination of two user ids
-  final ids = [user.uid, widget.otherUserId];
-  ids.sort();
-  chatId = ids.join('_');
-  
-  // Mark messages as read when chat is opened
-  markMessagesAsRead();
-  syncUserInfo();
-}
+  @override
+  void initState() {
+    super.initState();
 
-void markMessagesAsRead() async {
-  // Update the unread count to 0 in the current user's chat record
-  await FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .collection('chats')
-      .doc(widget.otherUserId)
-      .update({
-    'unreadCount': 0,
-  });
-  
-  // Mark all unread messages as read
-  final unreadMessages = await FirebaseFirestore.instance
-      .collection('chats')
-      .doc(chatId)
-      .collection('messages')
-      .where('senderId', isEqualTo: widget.otherUserId)
-      .where('read', isEqualTo: false)
-      .get();
-      
-  final batch = FirebaseFirestore.instance.batch();
-  for (var doc in unreadMessages.docs) {
-    batch.update(doc.reference, {'read': true});
+    final ids = [user.uid, widget.otherUserId];
+    ids.sort();
+    chatId = ids.join('_');
+
+    markMessagesAsRead();
+    syncUserInfo();
+    initCallNotifications();
   }
-  await batch.commit();
-}
 
-void syncUserInfo() async {
-  // Get current user's profile information from Firestore
-  final currentUserDoc = await FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .get();
-      
-  final currentUserName = currentUserDoc.data()?['name'] ?? '';
-  final currentUserImage = currentUserDoc.data()?['profilePic'] ?? '';
+  void initCallNotifications() {
+    CallNotificationHandler().updateFcmToken();
+  }
 
-  // Update current user's chat entry for the other user if needed
-  FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .collection('chats')
-      .doc(widget.otherUserId)
-      .set({
-    'userName': widget.otherUserName,
-    'userImage': widget.otherUserImage ?? '',
-  }, SetOptions(merge: true));
+  @override
+  void dispose() {
+    _callSub?.cancel();
+    super.dispose();
+  }
 
-  // Update other user's chat entry for the current user
-  FirebaseFirestore.instance
-      .collection('users')
-      .doc(widget.otherUserId)
-      .collection('chats')
-      .doc(user.uid)
-      .set({
-    'userName': currentUserName,
-    'userImage': currentUserImage,
-  }, SetOptions(merge: true));
-}
+  void _startCall() async {
+    await CallManager.handleCallPermissions();
+
+    final timestamp =
+        DateTime.now().millisecondsSinceEpoch.toString().substring(7);
+    final channelName =
+        'ch_${user.uid.substring(0, 5)}_${widget.otherUserId.substring(0, 5)}_$timestamp';
+
+    final currentUserDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+    final currentUserName = currentUserDoc.data()?['name'] ?? 'Unknown User';
+
+    final callManager = CallManager();
+    if (!callManager.isInitialized) {
+      await callManager.initialize();
+    }
+
+    await callManager.initiateCall(
+      channelName,
+      user.uid,
+      widget.otherUserId,
+      currentUserName,
+    );
+
+    await CallNotificationHandler().sendCallNotification(
+      widget.otherUserId,
+      channelName,
+      currentUserName,
+    );
+
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => VideoCallScreen(
+            channelName: channelName,
+          ),
+        ),
+      );
+    }
+  }
+
+  void markMessagesAsRead() async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('chats')
+        .doc(widget.otherUserId)
+        .update({
+      'unreadCount': 0,
+    }).catchError((_) {});
+
+    final unreadMessages = await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .where('senderId', isEqualTo: widget.otherUserId)
+        .where('read', isEqualTo: false)
+        .get();
+
+    final batch = FirebaseFirestore.instance.batch();
+    for (var doc in unreadMessages.docs) {
+      batch.update(doc.reference, {'read': true});
+    }
+    await batch.commit();
+  }
+
+  void syncUserInfo() async {
+    final currentUserDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    final currentUserName = currentUserDoc.data()?['name'] ?? '';
+    final currentUserImage = currentUserDoc.data()?['profilePic'] ?? '';
+
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('chats')
+        .doc(widget.otherUserId)
+        .set({
+      'userName': widget.otherUserName,
+      'userImage': widget.otherUserImage ?? '',
+    }, SetOptions(merge: true));
+
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.otherUserId)
+        .collection('chats')
+        .doc(user.uid)
+        .set({
+      'userName': currentUserName,
+      'userImage': currentUserImage,
+    }, SetOptions(merge: true));
+  }
 
   void sendMessage() async {
-  if (_controller.text.trim().isEmpty) return;
+    if (_controller.text.trim().isEmpty) return;
 
-  // Get current user's profile information from Firestore
-  final currentUserDoc = await FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .get();
-      
-  final currentUserName = currentUserDoc.data()?['name'] ?? '';
-  final currentUserImage = currentUserDoc.data()?['profilePic'] ?? '';
+    final currentUserDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
 
-  await FirebaseFirestore.instance
-      .collection('chats')
-      .doc(chatId)
-      .collection('messages')
-      .add({
-    'senderId': user.uid,
-    'receiverId': widget.otherUserId,
-    'message': _controller.text.trim(),
-    'timestamp': FieldValue.serverTimestamp(),
-    'read': false,
-  });
+    final currentUserName = currentUserDoc.data()?['name'] ?? '';
+    final currentUserImage = currentUserDoc.data()?['profilePic'] ?? '';
 
-  // Update recent chats for current user
-  await FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .collection('chats')
-      .doc(widget.otherUserId)
-      .set({
-    'chatId': chatId,
-    'lastMessage': _controller.text.trim(),
-    'timestamp': FieldValue.serverTimestamp(),
-    'unreadCount': 0,
-    'userName': widget.otherUserName,
-    'userImage': widget.otherUserImage ?? '',
-  });
+    await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .add({
+      'senderId': user.uid,
+      'receiverId': widget.otherUserId,
+      'message': _controller.text.trim(),
+      'timestamp': FieldValue.serverTimestamp(),
+      'read': false,
+    });
 
-  // Update recent chats for other user with complete sender information
-  await FirebaseFirestore.instance
-      .collection('users')
-      .doc(widget.otherUserId)
-      .collection('chats')
-      .doc(user.uid)
-      .set({
-    'chatId': chatId,
-    'lastMessage': _controller.text.trim(),
-    'timestamp': FieldValue.serverTimestamp(),
-    'unreadCount': FieldValue.increment(1),
-    'userName': currentUserName,  // Use name from Firestore
-    'userImage': currentUserImage,
-  });
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('chats')
+        .doc(widget.otherUserId)
+        .set({
+      'chatId': chatId,
+      'lastMessage': _controller.text.trim(),
+      'timestamp': FieldValue.serverTimestamp(),
+      'unreadCount': 0,
+      'userName': widget.otherUserName,
+      'userImage': widget.otherUserImage ?? '',
+    });
 
-  _controller.clear();
-}
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.otherUserId)
+        .collection('chats')
+        .doc(user.uid)
+        .set({
+      'chatId': chatId,
+      'lastMessage': _controller.text.trim(),
+      'timestamp': FieldValue.serverTimestamp(),
+      'unreadCount': FieldValue.increment(1),
+      'userName': currentUserName,
+      'userImage': currentUserImage,
+    });
+
+    _controller.clear();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -167,6 +218,12 @@ void syncUserInfo() async {
           icon: const Icon(Icons.arrow_back_ios_new, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.videocam, color: Colors.black),
+            onPressed: _startCall,
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -192,40 +249,46 @@ void syncUserInfo() async {
                     final isMe = msg['senderId'] == user.uid;
 
                     return Align(
-  alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-  child: Column(
-    crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-    children: [
-      Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isMe ? Colors.black : const Color(0xFFD4F5C4),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Text(
-          msg['message'],
-          style: TextStyle(
-            color: isMe ? Colors.white : Colors.black,
-            fontSize: 14,
-          ),
-        ),
-      ),
-      Padding(
-        padding: const EdgeInsets.only(top: 2.0, bottom: 8.0),
-        child: Text(
-          msg['timestamp'] != null 
-              ? _formatTime(msg['timestamp'].toDate()) 
-              : '',
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 10,
-          ),
-        ),
-      ),
-    ],
-  ),
-);
+                      alignment:
+                          isMe ? Alignment.centerRight : Alignment.centerLeft,
+                      child: Column(
+                        crossAxisAlignment: isMe
+                            ? CrossAxisAlignment.end
+                            : CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            margin: const EdgeInsets.symmetric(vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color:
+                                  isMe ? Colors.black : const Color(0xFFD4F5C4),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              msg['message'],
+                              style: TextStyle(
+                                color: isMe ? Colors.white : Colors.black,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(top: 2.0, bottom: 8.0),
+                            child: Text(
+                              msg['timestamp'] != null
+                                  ? _formatTime(msg['timestamp'].toDate())
+                                  : '',
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
                   },
                 );
               },
@@ -271,12 +334,13 @@ void syncUserInfo() async {
       ),
     );
   }
+
   String _formatTime(DateTime time) {
-  final now = DateTime.now();
-  if (now.difference(time).inDays == 0) {
-    return "${time.hour}:${time.minute.toString().padLeft(2, '0')}"; // today
-  } else {
-    return "${time.day}/${time.month}"; // earlier dates
+    final now = DateTime.now();
+    if (now.difference(time).inDays == 0) {
+      return "${time.hour}:${time.minute.toString().padLeft(2, '0')}";
+    } else {
+      return "${time.day}/${time.month}";
+    }
   }
-}
 }

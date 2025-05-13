@@ -1,7 +1,29 @@
+buildscript {
+    ext.kotlin_version = '2.1.21'
+
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
 allprojects {
     repositories {
         google()
         mavenCentral()
+    }
+
+    configurations.all {
+        resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == 'org.jetbrains.kotlin') {
+                details.useVersion '2.1.21'
+                details.because("Force Kotlin version to 2.1.21 to prevent version mismatch")
+            }
+        }
     }
 }
 
