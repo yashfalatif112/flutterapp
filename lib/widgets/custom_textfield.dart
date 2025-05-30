@@ -8,10 +8,11 @@ class CustomTextField extends StatelessWidget {
   final bool obscureText;
   final VoidCallback? onToggleObscure;
   final String? Function(String?)? validator;
-  GestureTapCallback? onTap;
-  bool readOnly;
+  final VoidCallback? onTap;
+  final bool readOnly;
+  final bool enabled;
 
-  CustomTextField({
+  const CustomTextField({
     super.key,
     required this.controller,
     required this.hintText,
@@ -20,26 +21,41 @@ class CustomTextField extends StatelessWidget {
     this.onToggleObscure,
     this.validator,
     this.onTap,
-    this.readOnly=false
+    this.readOnly = false,
+    this.enabled = true,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
+      controller: controller,
+      obscureText: obscureText,
+      validator: validator,
       onTap: onTap,
       readOnly: readOnly,
-      controller: controller,
-      obscureText: isPassword ? obscureText : false,
-      validator: validator,
+      enabled: enabled,
       decoration: InputDecoration(
         hintText: hintText,
+        hintStyle: const TextStyle(color: Colors.grey),
         filled: true,
-        fillColor: Color(0xff67CE67).withOpacity(0.05),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Colors.grey),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Colors.grey),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Colors.green),
+        ),
         suffixIcon: isPassword
             ? IconButton(
                 icon: Icon(
                   obscureText ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.grey,
                 ),
                 onPressed: onToggleObscure,
               )

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:homease/views/authentication/login/login.dart';
+import 'package:homease/views/authentication/role_selection/role_selection.dart';
 import 'package:homease/views/bottom_bar/bottom_bar.dart';
 import 'package:homease/views/authentication/signup/provider/category_provider.dart';
 import 'package:homease/views/bottom_bar/service_provider_status.dart';
@@ -29,11 +30,13 @@ class _SplashScreenState extends State<SplashScreen> {
 
       if (user != null) {
         await Provider.of<ServiceProviderStatus>(context, listen: false).refreshStatus();
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => BottomBarScreen()),
         );
       } else {
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const LoginScreen()),

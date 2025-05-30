@@ -28,51 +28,51 @@ class BookingsScreen extends StatelessWidget {
           ),
         ),
         actions: [
-          GestureDetector(
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context)=>NotificationScreen()));
-            },
-            child: Padding(
-              padding: const EdgeInsets.only(right: 10.0),
-              child: Container(
-                width: 29,
-                height: 29,
-                decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(6)),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SvgPicture.asset(
-                      'assets/icons/bell.svg',
-                      width: 20,
-                      height: 20,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 20.0),
-            child: Container(
-              width: 29,
-              height: 29,
-              decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(6)),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SvgPicture.asset(
-                    'assets/icons/settings.svg',
-                    width: 20,
-                    height: 20,
-                  ),
-                ],
-              ),
-            ),
-          )
+          // GestureDetector(
+          //   onTap: () {
+          //     Navigator.push(context, MaterialPageRoute(builder: (context)=>NotificationScreen()));
+          //   },
+          //   child: Padding(
+          //     padding: const EdgeInsets.only(right: 10.0),
+          //     child: Container(
+          //       width: 29,
+          //       height: 29,
+          //       decoration: BoxDecoration(
+          //           border: Border.all(color: Colors.grey),
+          //           borderRadius: BorderRadius.circular(6)),
+          //       child: Column(
+          //         mainAxisAlignment: MainAxisAlignment.center,
+          //         children: [
+          //           SvgPicture.asset(
+          //             'assets/icons/bell.svg',
+          //             width: 20,
+          //             height: 20,
+          //           ),
+          //         ],
+          //       ),
+          //     ),
+          //   ),
+          // ),
+          // Padding(
+          //   padding: const EdgeInsets.only(right: 20.0),
+          //   child: Container(
+          //     width: 29,
+          //     height: 29,
+          //     decoration: BoxDecoration(
+          //         border: Border.all(color: Colors.grey),
+          //         borderRadius: BorderRadius.circular(6)),
+          //     child: Column(
+          //       mainAxisAlignment: MainAxisAlignment.center,
+          //       children: [
+          //         SvgPicture.asset(
+          //           'assets/icons/settings.svg',
+          //           width: 20,
+          //           height: 20,
+          //         ),
+          //       ],
+          //     ),
+          //   ),
+          // )
         ],
       ),
       backgroundColor: const Color(0xFFF8F1EB),

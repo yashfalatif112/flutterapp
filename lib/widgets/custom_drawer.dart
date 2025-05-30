@@ -13,9 +13,27 @@ class CustomDrawer extends StatefulWidget {
 }
 
 class _CustomDrawerState extends State<CustomDrawer> {
+  bool _isCustomer = true;
+
   @override
   void initState() {
     super.initState();
+    _checkUserType();
+  }
+
+  Future<void> _checkUserType() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (doc.exists) {
+        final data = doc.data()!;
+        if (mounted) {
+          setState(() {
+            _isCustomer = !(data['serviceProvider'] ?? false);
+          });
+        }
+      }
+    }
   }
 
   void toggleServiceProvider(bool value) async {
@@ -99,18 +117,19 @@ class _CustomDrawerState extends State<CustomDrawer> {
               ],
             ),
             _buildSectionTitle("SETTINGS"),
-            ListTile(
-              leading: const Icon(Icons.radio_button_checked_sharp),
-              title: const Text('Service Provider'),
-              trailing: Switch(
-                activeColor: Colors.white,
-                activeTrackColor: Colors.green,
-                value: serviceProviderStatus.isServiceProvider,
-                onChanged: (value) {
-                  toggleServiceProvider(value);
-                },
-              ),
-            ),
+            // if (!_isCustomer)
+            //   ListTile(
+            //     leading: const Icon(Icons.radio_button_checked_sharp),
+            //     title: const Text('Service Provider'),
+            //     trailing: Switch(
+            //       activeColor: Colors.white,
+            //       activeTrackColor: Colors.green,
+            //       value: serviceProviderStatus.isServiceProvider,
+            //       onChanged: (value) {
+            //         toggleServiceProvider(value);
+            //       },
+            //     ),
+            //   ),
             // Rest of your drawer items
             _buildDrawerItem(Icons.account_circle, "My Account"),
             _buildDrawerItem(Icons.account_balance_wallet, "Wallet and Payment"),

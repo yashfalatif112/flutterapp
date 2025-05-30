@@ -17,7 +17,8 @@ import 'dart:io';
 import 'package:provider/provider.dart';
 
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({super.key});
+  final bool isCustomer;
+  const SignupScreen({super.key, required this.isCustomer});
 
   @override
   State<SignupScreen> createState() => _SignupScreenState();
@@ -112,7 +113,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
-    if (pickedFile == null) {
+    if (!widget.isCustomer && pickedFile == null) {
       setState(() {
         errorMessage = 'Please upload your government ID';
       });
@@ -125,8 +126,11 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     try {
-      String? imageUrl = await _uploadImage();
-      if (imageUrl == null && errorMessage != null) return;
+      String? imageUrl;
+      if (!widget.isCustomer) {
+        imageUrl = await _uploadImage();
+        if (imageUrl == null && errorMessage != null) return;
+      }
 
       UserCredential userCredential =
           await _auth.createUserWithEmailAndPassword(
@@ -134,16 +138,24 @@ class _SignupScreenState extends State<SignupScreen> {
         password: passwordController.text,
       );
 
-      await _firestore.collection('users').doc(userCredential.user!.uid).set({
+      final userData = {
         'uid': userCredential.user!.uid,
         'name': nameController.text.trim(),
         'email': emailController.text.trim(),
-        'occupation': occupationController.text.trim(),
-        'description': descriptionController.text.trim(),
-        'address': addressController.text.trim(),
-        'govIdImageUrl': imageUrl,
         'createdAt': FieldValue.serverTimestamp(),
-      });
+        'serviceProvider': !widget.isCustomer,
+      };
+
+      if (!widget.isCustomer) {
+        userData.addAll({
+          'occupation': occupationController.text.trim(),
+          'description': descriptionController.text.trim(),
+          'address': addressController.text.trim(),
+          'govIdImageUrl': imageUrl ?? '',
+        });
+      }
+
+      await _firestore.collection('users').doc(userCredential.user!.uid).set(userData);
 
       setState(() {
         _isLoading = false;
@@ -197,8 +209,8 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'Create Account',
+                Text(
+                  widget.isCustomer ? 'Create Customer Account' : 'Create Service Provider Account',
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const Text(
@@ -247,7 +259,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 Row(
                   children: [
                     Text(
-                      'Email address',
+                      'Email',
                       style: GoogleFonts.roboto(
                           fontSize: 16, color: Color(0xff7d7d7d)),
                     ),
@@ -278,166 +290,172 @@ class _SignupScreenState extends State<SignupScreen> {
                   onToggleObscure: _togglePasswordVisibility,
                   validator: _validatePassword,
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Text(
-                      'Occupation',
-                      style: GoogleFonts.roboto(
-                          fontSize: 16, color: Color(0xff7d7d7d)),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 5),
-                CustomTextField(
-                  hintText: '',
-                  controller: occupationController,
-                  validator: (value) => _validateField(value, 'Occupation'),
-                  onTap: () {
-                    if (categoriesProvider.isLoading) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Loading categories...')));
-                      return;
-                    }
-
-                    if (categoriesProvider.error != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(
-                              'Error loading categories. Please try again.')));
-                      return;
-                    }
-
-                    showOccupationSheet(
-                        items:
-                            categories.map((e) => e['name'] as String).toList(),
-                        onSelected: (value) {
-                          occupationController.text = value;
-                          selectedMainCategory = value;
-                          descriptionController.clear();
-                        },
-                        context: context);
-                  },
-                  readOnly: true,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Text(
-                      'Description',
-                      style: GoogleFonts.roboto(
-                          fontSize: 16, color: Color(0xff7d7d7d)),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 5),
-                CustomTextField(
-                  hintText: '',
-                  controller: descriptionController,
-                  readOnly: true,
-                  validator: (value) => _validateField(value, 'Description'),
-                  onTap: () {
-                    if (selectedMainCategory == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('Please select an occupation first')));
-                      return;
-                    }
-
-                    final selected = categories.firstWhere(
-                      (e) => e['name'] == selectedMainCategory,
-                      orElse: () => {},
-                    );
-                    final subcategories =
-                        List<String>.from(selected['subcategories'] ?? []);
-
-                    showOccupationSheet(
-                      items: subcategories,
-                      onSelected: (value) {
-                        descriptionController.text = value;
-                      },
-                      context: context,
-                    );
-                  },
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Text(
-                      'Address',
-                      style: GoogleFonts.roboto(
-                          fontSize: 16, color: Color(0xff7d7d7d)),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 5),
-                CustomTextField(
-                  hintText: '',
-                  controller: addressController,
-                  validator: (value) => _validateField(value, 'Address'),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: const Color(0xFFE6E6E6)),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
+                if (!widget.isCustomer) ...[
+                  const SizedBox(height: 12),
+                  Row(
                     children: [
-                      Row(
-                        children: const [
-                          Icon(Icons.upload_file, color: Colors.black),
-                          SizedBox(width: 8),
-                          Text("GOV ID UPLOAD and picture"),
-                        ],
+                      Text(
+                        'Occupation',
+                        style: GoogleFonts.roboto(
+                            fontSize: 16, color: Color(0xff7d7d7d)),
                       ),
-                      const SizedBox(height: 8),
-                      GestureDetector(
-                        onTap: () {
-                          pickGovIdFile();
-                        },
-                        child: DottedBorder(
-                            color: Colors.grey,
-                            strokeWidth: 1,
-                            dashPattern: [6, 4],
-                            borderType: BorderType.RRect,
-                            radius: Radius.circular(12),
-                            child: SizedBox(
-                              height: 150,
-                              width: double.infinity,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    pickedFile?.name ??
-                                        'Browse and select files you want to upload from your computer',
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                        color: Colors.black54, fontSize: 12),
-                                  ),
-                                  SizedBox(height: 5),
-                                  Container(
-                                    width: 30,
-                                    height: 30,
-                                    decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(5),
-                                        color: Colors.green),
-                                    child: Center(
-                                      child: Icon(
-                                        Icons.add,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  )
-                                ],
-                              ),
-                            )),
-                      )
                     ],
                   ),
-                ),
+                  SizedBox(height: 5),
+                  CustomTextField(
+                    hintText: '',
+                    controller: occupationController,
+                    validator: (value) => _validateField(value, 'Occupation'),
+                    onTap: () {
+                      if (categoriesProvider.isLoading) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Loading categories...')));
+                        return;
+                      }
+
+                      if (categoriesProvider.error != null) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(
+                                'Error loading categories. Please try again.')));
+                        return;
+                      }
+
+                      showOccupationSheet(
+                          items:
+                              categories.map((e) => e['name'] as String).toList(),
+                          onSelected: (value) {
+                            occupationController.text = value;
+                            selectedMainCategory = value;
+                            descriptionController.clear();
+                          },
+                          context: context);
+                    },
+                    readOnly: true,
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Text(
+                        'Description',
+                        style: GoogleFonts.roboto(
+                            fontSize: 16, color: Color(0xff7d7d7d)),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 5),
+                  CustomTextField(
+                    hintText: '',
+                    controller: descriptionController,
+                    readOnly: true,
+                    validator: (value) => _validateField(value, 'Description'),
+                    onTap: () async {
+                      if (selectedMainCategory == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Please select an occupation first')),
+                        );
+                        return;
+                      }
+
+                      final subcategoriesSnapshot = await FirebaseFirestore.instance
+                          .collection('services')
+                          .doc(selectedMainCategory)
+                          .collection('subcategories')
+                          .get();
+
+                      final subcategoryNames = subcategoriesSnapshot.docs
+                          .map((doc) => doc.data()['name'] as String)
+                          .toList();
+
+                      showOccupationSheet(
+                        items: subcategoryNames,
+                        onSelected: (value) {
+                          descriptionController.text = value;
+                        },
+                        context: context,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Text(
+                        'Address',
+                        style: GoogleFonts.roboto(
+                            fontSize: 16, color: Color(0xff7d7d7d)),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 5),
+                  CustomTextField(
+                    hintText: '',
+                    controller: addressController,
+                    validator: (value) => _validateField(value, 'Address'),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(color: const Color(0xFFE6E6E6)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: const [
+                            Icon(Icons.upload_file, color: Colors.black),
+                            SizedBox(width: 8),
+                            Text("GOV ID UPLOAD and picture"),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        GestureDetector(
+                          onTap: () {
+                            pickGovIdFile();
+                          },
+                          child: DottedBorder(
+                              color: Colors.grey,
+                              strokeWidth: 1,
+                              dashPattern: [6, 4],
+                              borderType: BorderType.RRect,
+                              radius: Radius.circular(12),
+                              child: SizedBox(
+                                height: 150,
+                                width: double.infinity,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      pickedFile?.name ??
+                                          'Browse and select files you want to upload from your computer',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                          color: Colors.black54, fontSize: 12),
+                                    ),
+                                    SizedBox(height: 5),
+                                    Container(
+                                      width: 30,
+                                      height: 30,
+                                      decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(5),
+                                          color: Colors.green),
+                                      child: Center(
+                                        child: Icon(
+                                          Icons.add,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              )),
+                        )
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 24),
                 CustomButton(
                   text: 'Signup',
@@ -445,46 +463,19 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 16),
                 Row(
-                  children: const [
-                    Expanded(child: Divider()),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Text("Or Sign Up With"),
-                    ),
-                    Expanded(child: Divider()),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _SocialButton(
-                        asset: 'assets/logo/google.svg', label: 'Google'),
-                    _SocialButton(
-                        asset: 'assets/logo/apple.svg', label: 'Apple ID'),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.push(context,
-                        MaterialPageRoute(builder: (context) => LoginScreen()));
-                  },
-                  child: Text.rich(
-                    TextSpan(
-                      text: 'Already have an account? ',
-                      style: GoogleFonts.roboto(color: Colors.black),
-                      children: const [
-                        TextSpan(
-                          text: 'Sign in',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              decoration: TextDecoration.underline),
-                        ),
-                      ],
+                    Text("Already have an account? "),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        );
+                      },
+                      child: Text("Login"),
                     ),
-                  ),
+                  ],
                 ),
               ],
             ),
@@ -492,6 +483,17 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    occupationController.dispose();
+    descriptionController.dispose();
+    addressController.dispose();
+    super.dispose();
   }
 }
 

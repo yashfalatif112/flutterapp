@@ -93,9 +93,9 @@ class _ServiceHomeScreenState extends State<ServiceHomeScreen> {
         automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFFF8F1EB),
         actions: [
-          _iconButton('assets/icons/bell.svg', () {
-            // Notification logic
-          }),
+          // _iconButton('assets/icons/bell.svg', () {
+          //   // Notification logic
+          // }),
           _iconButton('assets/icons/vert_bars.svg', () {
             widget.scaffoldKey.currentState?.openDrawer();
           }),

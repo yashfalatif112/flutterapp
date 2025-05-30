@@ -367,10 +367,11 @@ class _WalletScreenState extends State<WalletScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFFDFCF7),
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
+        automaticallyImplyLeading: false,
+        // leading: IconButton(
+        //   icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+        //   onPressed: () => Navigator.pop(context),
+        // ),
         title: const Text('Payment Integration',
             style: TextStyle(color: Colors.black)),
         centerTitle: true,
