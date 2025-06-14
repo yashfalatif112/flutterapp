@@ -34,7 +34,7 @@ class CallManager {
   bool get inCall => _inCall;
   RtcEngine get engine => _engine;
 
-  Future<void> initialize() async {
+  Future<void> initialize({bool isAudioOnly = false}) async {
     if (_isInitialized) return;
 
     try {
@@ -44,15 +44,20 @@ class CallManager {
       _engine = createAgoraRtcEngine();
       await _engine.initialize(const RtcEngineContext(appId: appId));
 
-      // Configure video settings
-      await _engine.enableVideo();
-      await _engine.setVideoEncoderConfiguration(
-        const VideoEncoderConfiguration(
-          dimensions: VideoDimensions(width: 640, height: 480),
-          frameRate: 30,
-          bitrate: 0, // Auto bitrate
-        ),
-      );
+      if (!isAudioOnly) {
+        // Configure video settings only for video calls
+        await _engine.enableVideo();
+        await _engine.setVideoEncoderConfiguration(
+          const VideoEncoderConfiguration(
+            dimensions: VideoDimensions(width: 640, height: 480),
+            frameRate: 30,
+            bitrate: 0, // Auto bitrate
+          ),
+        );
+      } else {
+        // Disable video for audio-only calls
+        await _engine.disableVideo();
+      }
 
       // Set default audio mode
       await _engine.setAudioProfile(
@@ -69,10 +74,10 @@ class CallManager {
     }
   }
 
-  Future<void> joinCall(String channelName, {bool asCallee = false}) async {
+  Future<void> joinCall(String channelName, {bool asCallee = false, bool isAudioOnly = false}) async {
     if (!_isInitialized) {
       debugPrint('Initializing engine before joining call');
-      await initialize();
+      await initialize(isAudioOnly: isAudioOnly);
     }
 
     try {
@@ -93,12 +98,14 @@ class CallManager {
       }
       debugPrint('Successfully retrieved token for channel: $channelName');
 
-      // Start local video preview
-      await _engine.startPreview();
-      debugPrint('Local preview started');
+      if (!isAudioOnly) {
+        // Start local video preview only for video calls
+        await _engine.startPreview();
+        debugPrint('Local preview started');
 
-      // Enable video module
-      await _engine.enableVideo();
+        // Enable video module
+        await _engine.enableVideo();
+      }
 
       // Set channel profile as communication
       await _engine
@@ -116,12 +123,12 @@ class CallManager {
           token: token,
           channelId: channelName,
           uid: uid,
-          options: const ChannelMediaOptions(
+          options: ChannelMediaOptions(
             channelProfile: ChannelProfileType.channelProfileCommunication,
             clientRoleType: ClientRoleType.clientRoleBroadcaster,
             autoSubscribeAudio: true,
-            autoSubscribeVideo: true,
-            publishCameraTrack: true,
+            autoSubscribeVideo: !isAudioOnly,
+            publishCameraTrack: !isAudioOnly,
             publishMicrophoneTrack: true,
           ),
         );
@@ -258,14 +265,9 @@ class CallManager {
   }
 
   static Future<void> handleCallPermissions() async {
-    // Request both camera and microphone permissions
-    final cameraStatus = await Permission.camera.request();
-    final microphoneStatus = await Permission.microphone.request();
-
-    // Check if both permissions are granted
-    if (cameraStatus != PermissionStatus.granted ||
-        microphoneStatus != PermissionStatus.granted) {
-      throw Exception('Camera and microphone permissions are required');
-    }
+    await [
+      Permission.camera,
+      Permission.microphone,
+    ].request();
   }
 }

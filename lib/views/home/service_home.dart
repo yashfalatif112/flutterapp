@@ -18,7 +18,7 @@ class ServiceHomeScreen extends StatefulWidget {
 class _ServiceHomeScreenState extends State<ServiceHomeScreen> {
   final GlobalKey _menuKey = GlobalKey();
   final BookingService _bookingService = BookingService();
-  
+
   bool _isLoading = true;
   BookingModel? _latestPendingBooking;
   BookingModel? _latestActiveBooking;
@@ -33,20 +33,22 @@ class _ServiceHomeScreenState extends State<ServiceHomeScreen> {
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       // Fetch newest pending request
       final pendingSnapshot = await _bookingService.getNewestPendingRequest();
       if (pendingSnapshot.docs.isNotEmpty) {
-        _latestPendingBooking = BookingModel.fromSnapshot(pendingSnapshot.docs.first);
+        _latestPendingBooking =
+            BookingModel.fromSnapshot(pendingSnapshot.docs.first);
       } else {
         _latestPendingBooking = null;
       }
-      
+
       // Fetch newest active request
       final activeSnapshot = await _bookingService.getNewestActiveRequest();
       if (activeSnapshot.docs.isNotEmpty) {
-        _latestActiveBooking = BookingModel.fromSnapshot(activeSnapshot.docs.first);
+        _latestActiveBooking =
+            BookingModel.fromSnapshot(activeSnapshot.docs.first);
       } else {
         _latestActiveBooking = null;
       }
@@ -60,8 +62,10 @@ class _ServiceHomeScreenState extends State<ServiceHomeScreen> {
   }
 
   void _showPopupMenu() {
-    final RenderBox button = _menuKey.currentContext!.findRenderObject() as RenderBox;
-    final RenderBox overlay = Overlay.of(context).context.findRenderObject() as RenderBox;
+    final RenderBox button =
+        _menuKey.currentContext!.findRenderObject() as RenderBox;
+    final RenderBox overlay =
+        Overlay.of(context).context.findRenderObject() as RenderBox;
     final Offset offset = button.localToGlobal(Offset.zero, ancestor: overlay);
     final RelativeRect position = RelativeRect.fromLTRB(
       offset.dx,
@@ -133,26 +137,28 @@ class _ServiceHomeScreenState extends State<ServiceHomeScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('New requests', 
-                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            const Text('New requests',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold)),
                             GestureDetector(
                               onTap: () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => AllPendingRequestsScreen(
+                                    builder: (context) =>
+                                        AllPendingRequestsScreen(
                                       onStatusChanged: _loadBookings,
                                     ),
                                   ),
                                 );
                               },
-                              child: const Text('View all', 
-                                  style: TextStyle(color: Colors.green)),
+                              child: const Text('View all',
+                                  style: TextStyle(color: Color(0xff48B1DB))),
                             ),
                           ],
                         ),
                         const SizedBox(height: 10),
-                        
+
                         _latestPendingBooking != null
                             ? RequestCard(
                                 booking: _latestPendingBooking!,
@@ -172,24 +178,26 @@ class _ServiceHomeScreenState extends State<ServiceHomeScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Active requests', 
-                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            const Text('Active requests',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold)),
                             GestureDetector(
                               onTap: () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => AllActiveRequestsScreen(),
+                                    builder: (context) =>
+                                        AllActiveRequestsScreen(),
                                   ),
-                                );
+                                ); 
                               },
-                              child: const Text('View all', 
-                                  style: TextStyle(color: Colors.green)),
+                              child: const Text('View all',
+                                  style: TextStyle(color: Color(0xff48B1DB))),
                             ),
                           ],
                         ),
                         const SizedBox(height: 10),
-                        
+
                         _latestActiveBooking != null
                             ? RequestCard(
                                 booking: _latestActiveBooking!,

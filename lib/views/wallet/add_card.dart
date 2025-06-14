@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:homease/widgets/dialog.dart';
+import 'package:flutter/services.dart';
 
 class AddNewCardScreen extends StatefulWidget {
   final String? currentUserId;
@@ -31,6 +32,89 @@ class _AddNewCardScreenState extends State<AddNewCardScreen> {
     _expiryDateController.dispose();
     _cvvController.dispose();
     super.dispose();
+  }
+
+  String _formatCardNumber(String input) {
+    // Remove all non-digit characters
+    input = input.replaceAll(RegExp(r'\D'), '');
+
+    // Split into groups of 4
+    List<String> groups = [];
+    for (int i = 0; i < input.length; i += 4) {
+      if (i + 4 <= input.length) {
+        groups.add(input.substring(i, i + 4));
+      } else {
+        groups.add(input.substring(i));
+      }
+    }
+
+    // Join with spaces
+    return groups.join(' ');
+  }
+
+  bool _isValidExpiryDate(String month, String year) {
+    try {
+      final currentDate = DateTime.now();
+      final expMonth = int.parse(month);
+      final expYear = 2000 + int.parse(year);
+
+      if (expMonth < 1 || expMonth > 12) return false;
+
+      if (expYear < currentDate.year) return false;
+      if (expYear == currentDate.year && expMonth < currentDate.month)
+        return false;
+
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  void _handleExpiryDateInput(String value) {
+    String numbers = value.replaceAll(RegExp(r'\D'), '');
+
+    if (numbers.length >= 1) {
+      int month = int.tryParse(numbers.substring(0, 1)) ?? 0;
+      // First digit of month can only be 0 or 1
+      if (month > 1) {
+        numbers = '0$month${numbers.substring(1)}';
+      }
+    }
+
+    if (numbers.length >= 2) {
+      int month = int.tryParse(numbers.substring(0, 2)) ?? 0;
+      // Month cannot be greater than 12
+      if (month > 12) {
+        numbers = '12${numbers.substring(2)}';
+      }
+    }
+
+    String formatted = '';
+    if (numbers.length >= 2) {
+      formatted = '${numbers.substring(0, 2)}/${numbers.substring(2)}';
+    } else {
+      formatted = numbers;
+    }
+
+    _expiryDateController.value = TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+
+  void _handleCvvInput(String value) {
+    // Remove all non-digit characters
+    String numbers = value.replaceAll(RegExp(r'\D'), '');
+
+    // Limit to 3 digits
+    if (numbers.length > 3) {
+      numbers = numbers.substring(0, 3);
+    }
+
+    _cvvController.value = TextEditingValue(
+      text: numbers,
+      selection: TextSelection.collapsed(offset: numbers.length),
+    );
   }
 
   Future<void> _saveCardToFirebase() async {
@@ -117,21 +201,6 @@ class _AddNewCardScreenState extends State<AddNewCardScreen> {
         title:
             const Text('Add New Card', style: TextStyle(color: Colors.black)),
         centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Container(
-              width: 40,
-              height: 40,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade400),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.more_vert, color: Colors.black),
-            ),
-          )
-        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -144,7 +213,7 @@ class _AddNewCardScreenState extends State<AddNewCardScreen> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.green,
+                    color: Color(0xff48B1DB),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Column(
@@ -194,6 +263,10 @@ class _AddNewCardScreenState extends State<AddNewCardScreen> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xff48B1DB)),
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -221,21 +294,33 @@ class _AddNewCardScreenState extends State<AddNewCardScreen> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
+                    focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xff48B1DB)),
+        ),
+                    counterText: '', // This removes the character counter
                   ),
                   keyboardType: TextInputType.number,
+                  maxLength: 19, // 16 digits + 3 spaces
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
+                    if (value == null || value.isEmpty) {
                       return 'Please enter card number';
                     }
-
-                    final cleanNumber = value.replaceAll(' ', '');
-                    if (cleanNumber.length < 13 || cleanNumber.length > 19) {
-                      return 'Please enter a valid card number';
+                    final numbers = value.replaceAll(' ', '');
+                    if (numbers.length != 16) {
+                      return 'Card number must be 16 digits';
                     }
                     return null;
                   },
                   onChanged: (value) {
-                    setState(() {});
+                    final formatted = _formatCardNumber(value);
+                    if (formatted != value) {
+                      _cardNumberController.value = TextEditingValue(
+                        text: formatted,
+                        selection:
+                            TextSelection.collapsed(offset: formatted.length),
+                      );
+                    }
                   },
                 ),
                 const SizedBox(height: 12),
@@ -257,20 +342,31 @@ class _AddNewCardScreenState extends State<AddNewCardScreen> {
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(color: Colors.grey.shade300),
                           ),
+                          focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xff48B1DB)),
+        ),
+                          counterText: '', // This removes the character counter
                         ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 5,
                         validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Required';
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter expiry date';
                           }
-
-                          if (!RegExp(r'^\d{2}/\d{2}$').hasMatch(value)) {
-                            return 'Use MM/YY format';
+                          if (!value.contains('/')) {
+                            return 'Invalid format';
+                          }
+                          final parts = value.split('/');
+                          if (parts.length != 2) {
+                            return 'Invalid format';
+                          }
+                          if (!_isValidExpiryDate(parts[0], parts[1])) {
+                            return 'Invalid expiry date';
                           }
                           return null;
                         },
-                        onChanged: (value) {
-                          setState(() {});
-                        },
+                        onChanged: _handleExpiryDateInput,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -290,18 +386,25 @@ class _AddNewCardScreenState extends State<AddNewCardScreen> {
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(color: Colors.grey.shade300),
                           ),
+                          focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xff48B1DB)),
+        ),
+                          counterText: '', // This removes the character counter
                         ),
                         keyboardType: TextInputType.number,
                         obscureText: true,
+                        maxLength: 3,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Required';
                           }
-                          if (value.length < 3 || value.length > 4) {
-                            return 'Invalid CVV';
+                          if (value.length != 3) {
+                            return 'CVV must be 3 digits';
                           }
                           return null;
                         },
+                        onChanged: _handleCvvInput,
                       ),
                     ),
                   ],
@@ -312,7 +415,7 @@ class _AddNewCardScreenState extends State<AddNewCardScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _saveCardToFirebase,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
+                      backgroundColor: Color(0xff48B1DB),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                     ),

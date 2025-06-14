@@ -9,7 +9,7 @@ import 'package:homease/views/bottom_bar/bottom_bar.dart';
 import 'package:homease/views/payment_status/payment_status.dart';
 import 'package:homease/views/wallet/add_card.dart';
 import 'package:homease/views/wallet/widgets/card_box.dart';
-import 'package:homease/views/wallet/widgets/paypal_payment_handler.dart';
+import 'package:homease/views/wallet/widgets/paypal_payment_handler.dart' as paypal;
 import 'package:homease/widgets/dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -27,7 +27,7 @@ class _WalletScreenState extends State<WalletScreen> {
   bool isLoading = true;
   List<Map<String, dynamic>> cards = [];
   bool isProcessingPayment = false;
-  final PayPalService _paypalService = PayPalService(); // Add PayPal service
+  final PayPalService _paypalService = PayPalService();
 
   @override
   void initState() {
@@ -79,6 +79,7 @@ class _WalletScreenState extends State<WalletScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: const Text('Select Payment Method', textAlign: TextAlign.center),
         content: Column(
@@ -125,21 +126,11 @@ class _WalletScreenState extends State<WalletScreen> {
       isProcessingPayment = true;
     });
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(color: Colors.blue),
-      ),
-    );
-
-    final String uuid = const Uuid().v4();
-    // These URLs should be registered in your PayPal developer account
-    // Using app scheme URLs that your app can handle is an alternative approach
-    final String returnUrl = 'homease://payment/success';
-    final String cancelUrl = 'homease://payment/cancel';
-
     try {
+      const Uuid().v4();
+      final String returnUrl = 'homease://payment/success';
+      final String cancelUrl = 'homease://payment/cancel';
+
       final result = await _paypalService.createPayment(
         amount: bookingProvider.price!,
         currency: 'USD',
@@ -148,61 +139,63 @@ class _WalletScreenState extends State<WalletScreen> {
         description: 'Payment for ${bookingProvider.serviceName ?? "services"}',
       );
 
-      // Close loading dialog
-      Navigator.pop(context);
+      setState(() {
+        isProcessingPayment = false;
+      });
 
       if (result['success'] == true && result['approvalUrl'] != null) {
-        final paymentId = result['paymentId'];
         
         // Show PayPal WebView for payment
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PayPalWebView(
-              approvalUrl: result['approvalUrl'],
-              returnUrl: returnUrl,
-              cancelUrl: cancelUrl,
-              onSuccess: (paymentId, payerId) {
-                Navigator.pop(context); // Close the WebView
-                
-                // Handle successful payment with the PayPalPaymentHandler
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => PayPalPaymentHandler(
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => paypal.PayPalWebView(
+                approvalUrl: result['approvalUrl'],
+                returnUrl: returnUrl,
+                cancelUrl: cancelUrl,
+                onSuccess: (paymentId, payerId) async {
+                  Navigator.pop(context); // Close the WebView
+                  
+                  // Execute the payment
+                  try {
+                    final executeResult = await _paypalService.executePayment(
                       paymentId: paymentId,
                       payerId: payerId,
-                      onPaymentComplete: (success, data) async {
-                        if (success) {
-                          await _saveBookingToFirebase(card, 'Approved', 'PayPal');
-                        }
-                      },
-                    ),
-                  ),
-                );
-              },
-              onCancel: () {
-                Navigator.pop(context);
-                _showPaymentFailedDialog('Payment was cancelled');
-              },
-              onError: () {
-                Navigator.pop(context);
-                _showPaymentFailedDialog('An error occurred during payment');
-              },
+                    );
+
+                    if (executeResult['success'] == true) {
+                      await _saveBookingToFirebase(card, 'Approved', 'PayPal');
+                    } else {
+                      _showPaymentFailedDialog(
+                        executeResult['message'] ?? 'Failed to execute payment'
+                      );
+                    }
+                  } catch (e) {
+                    _showPaymentFailedDialog('Error executing payment: $e');
+                  }
+                },
+                onCancel: () {
+                  Navigator.pop(context);
+                  _showPaymentFailedDialog('Payment was cancelled');
+                },
+                onError: () {
+                  Navigator.pop(context);
+                  _showPaymentFailedDialog('An error occurred during payment');
+                },
+              ),
             ),
-          ),
-        );
+          );
+        }
       } else {
         _showPaymentFailedDialog(
             result['message'] ?? 'Failed to create PayPal payment');
       }
     } catch (e) {
-      Navigator.pop(context);
-      _showPaymentFailedDialog('Error: ${e.toString()}');
-    } finally {
       setState(() {
         isProcessingPayment = false;
       });
+      _showPaymentFailedDialog('Error: ${e.toString()}');
     }
   }
 
@@ -216,6 +209,7 @@ class _WalletScreenState extends State<WalletScreen> {
       );
       return;
     }
+    await _saveBookingToFirebase(card, 'Approved', 'Stripe');
 
     setState(() {
       isProcessingPayment = true;
@@ -409,7 +403,7 @@ class _WalletScreenState extends State<WalletScreen> {
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.all(16.0),
-                    child: CircularProgressIndicator(color: Colors.green),
+                    child: CircularProgressIndicator(color: Color(0xff48B1DB)),
                   ),
                 )
               else if (cards.isEmpty)
@@ -461,7 +455,7 @@ class _WalletScreenState extends State<WalletScreen> {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: Color(0xff48B1DB),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8)),
                   ),

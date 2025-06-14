@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:homease/views/book_service/confirm_booking.dart';
 import 'package:homease/views/book_service/provider/booking_provider.dart';
 import 'package:homease/views/book_service/widgets/service_card.dart';
@@ -38,6 +39,7 @@ class _BookServiceState extends State<BookService> {
   TimeOfDay selectedTime = TimeOfDay.now();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _instructionController = TextEditingController();
+  final TextEditingController _priceController = TextEditingController();
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -109,32 +111,6 @@ class _BookServiceState extends State<BookService> {
                 index: 1,
                 onTap: () {},
               ),
-              if (widget.servicePrice != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.attach_money, color: Colors.green),
-                        SizedBox(width: 8),
-                        Text(
-                          "Price: \$${widget.servicePrice!.toStringAsFixed(2)}",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
               const SizedBox(height: 12),
               const Text(
                 'Select Date',
@@ -224,7 +200,37 @@ class _BookServiceState extends State<BookService> {
               ),
               const SizedBox(height: 20),
               const Text(
-                'Special Instruction',
+                'Your Offered Price',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: TextField(
+                  controller: _priceController,
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                  ],
+                  decoration: const InputDecoration(
+                    hintText: 'Enter your price (e.g., 50.00)',
+                    hintStyle: TextStyle(color: Colors.grey),
+                    border: InputBorder.none,
+                    prefixIcon: Icon(Icons.attach_money, color: Color(0xff48B1DB)),
+                    contentPadding: EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Special Instruction (Optional)',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -254,6 +260,36 @@ class _BookServiceState extends State<BookService> {
                 height: 50,
                 child: ElevatedButton(
                   onPressed: () async {
+                    if (_addressController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please enter an address')),
+                      );
+                      return;
+                    }
+
+                    if (_priceController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please enter your offered price')),
+                      );
+                      return;
+                    }
+
+                    double? userOfferedPrice;
+                    try {
+                      userOfferedPrice = double.parse(_priceController.text.trim());
+                      if (userOfferedPrice <= 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please enter a valid price greater than 0')),
+                        );
+                        return;
+                      }
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please enter a valid price')),
+                      );
+                      return;
+                    }
+
                     showDialog(
                       context: context,
                       barrierDismissible: false,
@@ -277,11 +313,11 @@ class _BookServiceState extends State<BookService> {
                         serviceName: widget.providerDescription ?? '',
                         selectedDate: selectedDate,
                         selectedTime: selectedTime,
-                        address: _addressController.text,
-                        instructions: _instructionController.text,
+                        address: _addressController.text.trim(),
+                        instructions: _instructionController.text.trim(),
                         currentUserId: currentUserId,
                         serviceProviderId: widget.providerId,
-                        price: widget.servicePrice,
+                        price: userOfferedPrice, // Use the user's offered price
                       );
 
                       Navigator.push(
@@ -299,7 +335,7 @@ class _BookServiceState extends State<BookService> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: Color(0xff48B1DB),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -313,6 +349,7 @@ class _BookServiceState extends State<BookService> {
                   ),
                 ),
               ),
+              SizedBox(height: 30,)
             ],
           ),
         ),
@@ -351,6 +388,7 @@ class _BookServiceState extends State<BookService> {
   void dispose() {
     _addressController.dispose();
     _instructionController.dispose();
+    _priceController.dispose(); // Don't forget to dispose the new controller
     super.dispose();
   }
 }

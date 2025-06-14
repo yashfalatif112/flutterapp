@@ -49,7 +49,7 @@ class CustomTextField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.green),
+          borderSide: const BorderSide(color: Color(0xff48B1DB)),
         ),
         suffixIcon: isPassword
             ? IconButton(

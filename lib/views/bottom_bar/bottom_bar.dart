@@ -104,7 +104,7 @@ class _BottomBarScreenState extends State<BottomBarScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: isSelected ? Colors.green : Colors.transparent,
+                  color: isSelected ? Color(0xff48B1DB) : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(

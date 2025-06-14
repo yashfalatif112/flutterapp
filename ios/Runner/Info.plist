@@ -29,17 +29,6 @@
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
 	<key>UISupportedInterfaceOrientations</key>
-	<key>NSCameraUsageDescription</key>
-<string>We need access to your camera for video calls</string>
-<key>NSMicrophoneUsageDescription</key>
-<string>We need access to your microphone for video calls</string>
-<key>UIBackgroundModes</key>
-<array>
-    <string>audio</string>
-    <string>voip</string>
-    <string>fetch</string>
-    <string>remote-notification</string>
-</array>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
@@ -56,5 +45,40 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>We need access to your camera for taking profile pictures and service-related photos</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need access to your photo library to upload profile pictures and service-related images</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We need your location to show nearby services and service providers</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>We need your location to show nearby services and track service providers en route to you</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We need access to your microphone for voice calls with service providers</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
+	<key>NSContactsUsageDescription</key>
+	<string>We need access to your contacts to help you share service recommendations with friends</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>We need access to your calendar to schedule service appointments</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>We use Face ID for secure and quick login to your account</string>
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>homease</string>
+				<string>com.googleusercontent.apps.YOUR-CLIENT-ID</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

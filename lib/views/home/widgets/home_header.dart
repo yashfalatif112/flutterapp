@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:homease/views/services/services.dart';
 
 class HomeHeader extends StatelessWidget {
   const HomeHeader({super.key});
@@ -8,7 +9,7 @@ class HomeHeader extends StatelessWidget {
     return Container(
       height: 140,
       decoration: BoxDecoration(
-        color: Colors.green,
+        color: Color(0xff48B1DB),
         borderRadius: BorderRadius.circular(16),
         image: const DecorationImage(
           image: AssetImage('assets/images/banner.png'),
@@ -38,16 +39,27 @@ class HomeHeader extends StatelessWidget {
                   style: TextStyle(color: Colors.white, fontSize: 12),
                 ),
                 const SizedBox(height: 5),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    'Book Now',
-                    style: TextStyle(color: Colors.white,fontSize: 12),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => BookingsScreen(
+                          selectedCategory: 'Home',
+                        ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'Book Now',
+                      style: TextStyle(color: Colors.white, fontSize: 12),
+                    ),
                   ),
                 ),
               ],

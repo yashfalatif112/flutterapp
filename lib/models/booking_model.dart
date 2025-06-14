@@ -6,6 +6,7 @@ class BookingModel {
   final Timestamp createdAt;
   final String status;
   final String currentUserId;
+  final double? price;
 
   BookingModel({
     required this.id,
@@ -13,6 +14,7 @@ class BookingModel {
     required this.createdAt,
     required this.status,
     required this.currentUserId,
+    this.price,
   });
 
   factory BookingModel.fromSnapshot(DocumentSnapshot snapshot) {
@@ -23,6 +25,7 @@ class BookingModel {
       createdAt: data['createdAt'] ?? Timestamp.now(),
       status: data['status'] ?? 'pending',
       currentUserId: data['currentUserId'] ?? '',
+      price: (data['price'])?.toDouble(),
     );
   }
 }

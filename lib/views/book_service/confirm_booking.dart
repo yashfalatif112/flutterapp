@@ -66,9 +66,9 @@ class ConfirmBooking extends StatelessWidget {
               const Divider(),
               _buildInfoRow('Address', address),
               const Divider(),
-              _buildInfoRow('Special Instructions', instructions),
-              const Divider(),
               _buildInfoRow('Price', price.toString()),
+              const Divider(),
+              _buildInfoRow('Special Instructions', instructions),
               const Divider(),
               const SizedBox(height: 30),
               SizedBox(
@@ -86,7 +86,7 @@ class ConfirmBooking extends StatelessWidget {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: Color(0xff48B1DB),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),

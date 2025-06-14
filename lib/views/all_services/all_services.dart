@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:homease/views/book_service/book_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:homease/views/messages/chat_screen.dart';
+import 'package:homease/views/profile/tabbar_screens/portfolio/portfolio.dart';
+import 'package:homease/views/profile/tabbar_screens/reviews_and_ratings.dart';
+import 'package:homease/views/profile/tabbar_screens/certifications/certifications.dart';
 
 class AllServicesScreen extends StatefulWidget {
   final String categoryName;
@@ -82,10 +85,13 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
 
         final userDoc = await _firestore.collection('users').doc(userId).get();
         if (userDoc.exists && userDoc.data() != null) {
-          providers.add({
-            ...userDoc.data()!,
-            'id': userDoc.id,
-          });
+          final serviceStatus = userDoc.data()?['serviceStatus'];
+          if (serviceStatus == null || serviceStatus == true) {
+            providers.add({
+              ...userDoc.data()!,
+              'id': userDoc.id,
+            });
+          }
         }
       }
 
@@ -118,12 +124,6 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
           style: TextStyle(color: Colors.black),
         ),
         centerTitle: true,
-        actions: const [
-          Icon(Icons.grid_view, color: Colors.black),
-          SizedBox(width: 17),
-          Icon(Icons.settings, color: Colors.black),
-          SizedBox(width: 9),
-        ],
       ),
       body: Column(
         children: [
@@ -157,6 +157,233 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
                           ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class ServiceProviderProfileScreen extends StatefulWidget {
+  final String providerId;
+  final String providerName;
+  final String? providerImage;
+  final String providerOccupation;
+  final String providerDescription;
+  final String providerAddress;
+
+  const ServiceProviderProfileScreen({
+    super.key,
+    required this.providerId,
+    required this.providerName,
+    this.providerImage,
+    required this.providerOccupation,
+    required this.providerDescription,
+    required this.providerAddress,
+  });
+
+  @override
+  State<ServiceProviderProfileScreen> createState() =>
+      _ServiceProviderProfileScreenState();
+}
+
+class _ServiceProviderProfileScreenState
+    extends State<ServiceProviderProfileScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Service Provider Profile',
+          style: TextStyle(color: Colors.black),
+        ),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.08),
+                    spreadRadius: 0,
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Stack(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xff48B1DB).withOpacity(0.2),
+                            width: 3,
+                          ),
+                        ),
+                        child: CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Colors.grey[100],
+                          backgroundImage: widget.providerImage != null &&
+                                  widget.providerImage!.isNotEmpty
+                              ? NetworkImage(widget.providerImage!)
+                              : null,
+                          child: widget.providerImage == null ||
+                                  widget.providerImage!.isEmpty
+                              ? Icon(
+                                  Icons.person,
+                                  size: 50,
+                                  color: Colors.grey[400],
+                                )
+                              : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    widget.providerName,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: const Color(0xff48B1DB),
+                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    child: Text(
+                      widget.providerOccupation,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.providerDescription,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.location_on, color: Color(0xff48B1DB)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            widget.providerAddress,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: TabBar(
+                dividerColor: Colors.transparent,
+                controller: _tabController,
+                indicatorColor: const Color(0xff48B1DB),
+                labelColor: Colors.black,
+                unselectedLabelColor: Colors.grey,
+                indicatorSize: TabBarIndicatorSize.tab,
+                tabs: const [
+                  Tab(text: "Portfolio"),
+                  Tab(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        "Reviews &\nRating",
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                  Tab(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        "Certifications &\nQualifications",
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.5,
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  Portfolio(providerId: widget.providerId),
+                  ReviewsAndRatings(providerId: widget.providerId),
+                  Certifications(providerId: widget.providerId),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -231,7 +458,7 @@ class ServiceTile extends StatelessWidget {
                   Row(
                     children: [
                       const Icon(Icons.location_on,
-                          color: Colors.green, size: 16),
+                          color: Color(0xff48B1DB), size: 16),
                       const SizedBox(width: 2),
                       Flexible(
                         child: Text(
@@ -242,20 +469,26 @@ class ServiceTile extends StatelessWidget {
                       ),
                     ],
                   ),
-                  // if (servicePrice != null)
-                  //   Padding(
-                  //     padding: const EdgeInsets.only(top: 4.0),
-                  //     child: Text(
-                  //       "Price: \$${servicePrice!.toStringAsFixed(2)}",
-                  //       style: const TextStyle(
-                  //         fontSize: 14,
-                  //         fontWeight: FontWeight.w500,
-                  //         color: Colors.green,
-                  //       ),
-                  //     ),
-                  //   ),
                 ],
               ),
+            ),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ServiceProviderProfileScreen(
+                      providerId: userId,
+                      providerName: name,
+                      providerImage: imageUrl,
+                      providerOccupation: occupation,
+                      providerDescription: description,
+                      providerAddress: address,
+                    ),
+                  ),
+                );
+              },
+              child: const Icon(Icons.person_outline, color: Colors.black),
             ),
             const SizedBox(width: 12),
             Container(
@@ -317,9 +550,7 @@ class ServiceTile extends StatelessWidget {
               },
               child: const Icon(Icons.chat_sharp, color: Colors.black),
             ),
-            const SizedBox(
-              width: 5,
-            )
+            const SizedBox(width: 5),
           ],
         ),
       ),

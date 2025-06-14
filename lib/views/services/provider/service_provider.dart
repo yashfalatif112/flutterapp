@@ -12,7 +12,6 @@ class ServicesProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  // Original fetchServices stays unchanged
   Future<void> fetchServices() async {
     _isLoading = true;
     _error = null;
@@ -24,10 +23,10 @@ class ServicesProvider with ChangeNotifier {
 
       for (var doc in snapshot.docs) {
         final subcatSnap = await doc.reference.collection('subcategories').get();
-        final subcategories = subcatSnap.docs.map((subDoc) => subDoc['name'] as String).toList();
+        final subcategories = subcatSnap.docs.map((subDoc) => subDoc.id).toList();
 
         fetchedCategories.add({
-          'name': doc['categoryName'],
+          'name': doc.id,
           'subcategories': subcategories,
         });
       }
@@ -51,13 +50,16 @@ class ServicesProvider with ChangeNotifier {
       List<Map<String, dynamic>> allSubcategories = [];
 
       for (var doc in snapshot.docs) {
+        final categoryName = doc.id;
         final subcatSnap = await doc.reference.collection('subcategories').get();
         for (var subDoc in subcatSnap.docs) {
+          final data = subDoc.data();
           allSubcategories.add({
-            'name': subDoc['name'],
-            'price': subDoc['price'],
-            'rating': subDoc['rating'],
-            'image': subDoc['image'],
+            'name': subDoc.id,
+            'price': data['price'] ?? 0,
+            'rating': data['rating'] ?? 0,
+            'image': data['image'] ?? '',
+            'category': categoryName,
           });
         }
       }

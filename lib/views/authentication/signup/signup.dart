@@ -15,6 +15,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 
 import 'package:provider/provider.dart';
+import 'package:homease/services/social_auth_service.dart';
+import 'package:homease/views/authentication/complete_profile/complete_profile.dart';
 
 class SignupScreen extends StatefulWidget {
   final bool isCustomer;
@@ -46,6 +48,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
   List<Map<String, dynamic>> categories = [];
   String? selectedMainCategory;
+
+  final SocialAuthService _socialAuthService = SocialAuthService();
 
   void _togglePasswordVisibility() {
     setState(() {
@@ -183,6 +187,153 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
+  Future<void> _handleGoogleSignUp() async {
+    setState(() {
+      _isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final result = await _socialAuthService.signInWithGoogle();
+
+      if (!result['success']) {
+        setState(() {
+          _isLoading = false;
+          errorMessage = result['message'];
+        });
+        return;
+      }
+
+      final user = result['user'];
+      
+      if (!result['isNewUser']) {
+        setState(() {
+          _isLoading = false;
+        });
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Account already exists. Please login.')),
+        );
+        return;
+      }
+
+      // Save user data
+      if (widget.isCustomer) {
+        await _socialAuthService.saveUserData(
+          uid: user.uid,
+          email: user.email ?? '',
+          name: user.displayName ?? '',
+          isServiceProvider: false,
+        );
+
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => BottomBarScreen()),
+        );
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CompleteProfileScreen(
+              uid: user.uid,
+              email: user.email ?? '',
+              name: user.displayName ?? '',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        errorMessage = 'An error occurred: $e';
+      });
+    }
+  }
+
+  Future<void> _handleAppleSignUp() async {
+    setState(() {
+      _isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final result = await _socialAuthService.signInWithApple();
+
+      if (!result['success']) {
+        setState(() {
+          _isLoading = false;
+          errorMessage = result['message'];
+        });
+        return;
+      }
+
+      final user = result['user'];
+      final fullName = result['fullName'] ?? user.displayName ?? 'User';
+      
+      if (!result['isNewUser']) {
+        setState(() {
+          _isLoading = false;
+        });
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Account already exists. Please login.')),
+        );
+        return;
+      }
+
+      // Save user data
+      if (widget.isCustomer) {
+        await _socialAuthService.saveUserData(
+          uid: user.uid,
+          email: user.email ?? '',
+          name: fullName,
+          isServiceProvider: false,
+        );
+
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => BottomBarScreen()),
+        );
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CompleteProfileScreen(
+              uid: user.uid,
+              email: user.email ?? '',
+              name: fullName,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        errorMessage = 'An error occurred: $e';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final categoriesProvider = Provider.of<CategoriesProvider>(context);
@@ -197,17 +348,7 @@ class _SignupScreenState extends State<SignupScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const SizedBox(height: 24),
-                Container(
-                  height: 100,
-                  width: 100,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: DecorationImage(
-                      image: AssetImage('assets/logo/mainlogo.png'),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
+                Image.asset('assets/logo/logo.png',height:100),
                 const SizedBox(height: 16),
                 Text(
                   widget.isCustomer ? 'Create Customer Account' : 'Create Service Provider Account',
@@ -440,7 +581,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                       height: 30,
                                       decoration: BoxDecoration(
                                           borderRadius: BorderRadius.circular(5),
-                                          color: Colors.green),
+                                          color: Color(0xff48B1DB)),
                                       child: Center(
                                         child: Icon(
                                           Icons.add,
@@ -463,6 +604,66 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 16),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    GestureDetector(
+                      onTap: _handleGoogleSignUp,
+                      child: Container(
+                        width: 100,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3F2E6),
+                          border: Border.all(color: const Color(0xFFE6E6E6)),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        alignment: Alignment.center,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SvgPicture.asset(
+                              'assets/logo/google.svg',
+                              height: 20,
+                            ),
+                            SizedBox(width: 5),
+                            Text(
+                              'Google',
+                              style: GoogleFonts.montserrat(fontSize: 12),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: _handleAppleSignUp,
+                      child: Container(
+                        width: 100,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3F2E6),
+                          border: Border.all(color: const Color(0xFFE6E6E6)),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        alignment: Alignment.center,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SvgPicture.asset(
+                              'assets/logo/apple.svg',
+                              height: 20,
+                            ),
+                            SizedBox(width: 5),
+                            Text(
+                              'Apple',
+                              style: GoogleFonts.montserrat(fontSize: 12),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text("Already have an account? "),
@@ -473,7 +674,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           MaterialPageRoute(builder: (_) => const LoginScreen()),
                         );
                       },
-                      child: Text("Login"),
+                      child: Text("Login",style: TextStyle(color: Color(0xff48B1DB)),),
                     ),
                   ],
                 ),

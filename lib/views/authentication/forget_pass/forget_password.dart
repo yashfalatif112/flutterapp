@@ -107,6 +107,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFFFAF9F1),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -122,7 +123,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
               children: [
                 const SizedBox(height: 40),
                 Image.asset(
-                  'assets/logo/bubble_logo.png',
+                  'assets/logo/logo.png',
                   height: 100,
                 ),
                 const SizedBox(height: 24),

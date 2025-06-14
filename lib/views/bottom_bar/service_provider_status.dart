@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:homease/services/location_service.dart';
 
 class ServiceProviderStatus with ChangeNotifier {
   bool _isServiceProvider = false;
   bool get isServiceProvider => _isServiceProvider;
   StreamSubscription<User?>? _authSubscription;
+  final LocationService _locationService = LocationService();
   
   ServiceProviderStatus() {
     // Initialize with auth listener
@@ -28,6 +30,13 @@ class ServiceProviderStatus with ChangeNotifier {
   
   void setStatus(bool value) {
     _isServiceProvider = value;
+    if (value) {
+      // Start location tracking when service provider becomes active
+      _locationService.startLocationTracking();
+    } else {
+      // Stop location tracking when service provider becomes inactive
+      _locationService.stopLocationTracking();
+    }
     notifyListeners();
   }
   

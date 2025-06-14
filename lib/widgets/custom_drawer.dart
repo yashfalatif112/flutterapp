@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:homease/views/authentication/login/login.dart';
 import 'package:homease/views/bottom_bar/service_provider_status.dart';
 import 'package:provider/provider.dart';
+import 'package:homease/views/bookings/pending_bookings_screen.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class CustomDrawer extends StatefulWidget {
   const CustomDrawer({super.key});
@@ -13,25 +15,23 @@ class CustomDrawer extends StatefulWidget {
 }
 
 class _CustomDrawerState extends State<CustomDrawer> {
-  bool _isCustomer = true;
+  Map<String, dynamic>? _userData;
 
   @override
   void initState() {
     super.initState();
-    _checkUserType();
+    _loadUserData();
   }
 
-  Future<void> _checkUserType() async {
+  Future<void> _loadUserData() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
       if (doc.exists) {
-        final data = doc.data()!;
-        if (mounted) {
-          setState(() {
-            _isCustomer = !(data['serviceProvider'] ?? false);
-          });
-        }
+        setState(() {
+          _userData = doc.data();
+        });
       }
     }
   }
@@ -43,27 +43,31 @@ class _CustomDrawerState extends State<CustomDrawer> {
       await FirebaseFirestore.instance.collection('users').doc(uid).update({
         'serviceProvider': value,
       });
-      
+
       // Update in provider
       Provider.of<ServiceProviderStatus>(context, listen: false)
           .setStatus(value);
     }
   }
-  
+
   Future<void> handleLogout(BuildContext context) async {
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
         title: const Text("Confirm Logout"),
         content: const Text("Are you sure you want to logout?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("No"),
+            child: const Text(
+              "No",
+              style: TextStyle(color: Colors.black),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Yes"),
+            child: const Text("Yes", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -72,7 +76,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
     if (shouldLogout == true) {
       // Sign out from Firebase
       await FirebaseAuth.instance.signOut();
-      
+
       // Navigate to login screen
       Navigator.pushAndRemoveUntil(
         context,
@@ -84,9 +88,8 @@ class _CustomDrawerState extends State<CustomDrawer> {
 
   @override
   Widget build(BuildContext context) {
-    // Use the provider directly for the switch
     final serviceProviderStatus = Provider.of<ServiceProviderStatus>(context);
-    
+
     return Drawer(
       backgroundColor: Colors.white,
       child: Container(
@@ -94,52 +97,63 @@ class _CustomDrawerState extends State<CustomDrawer> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const SizedBox(height: 50),
-            Row(
-              children: [
-                const SizedBox(width: 15),
-                Container(
-                  height: 40,
-                  width: 40,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: const DecorationImage(
-                      image: AssetImage('assets/logo/mainlogo.png'),
-                      fit: BoxFit.cover,
+            SizedBox(
+              height: 40,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 10.0),
+              child: Row(
+                spacing: 10,
+                children: [
+                  Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      image: DecorationImage(
+                        image: AssetImage('assets/logo/background_logo.png'),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                      size: 20,
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                const Text(
-                  "Go Home Ease",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                )
-              ],
+                  Text(
+                    "Go Home Ease",
+                    style: const TextStyle(
+                         fontSize: 20),
+                  )
+                ],
+              ),
             ),
             _buildSectionTitle("SETTINGS"),
-            // if (!_isCustomer)
-            //   ListTile(
-            //     leading: const Icon(Icons.radio_button_checked_sharp),
-            //     title: const Text('Service Provider'),
-            //     trailing: Switch(
-            //       activeColor: Colors.white,
-            //       activeTrackColor: Colors.green,
-            //       value: serviceProviderStatus.isServiceProvider,
-            //       onChanged: (value) {
-            //         toggleServiceProvider(value);
-            //       },
-            //     ),
-            //   ),
-            // Rest of your drawer items
             _buildDrawerItem(Icons.account_circle, "My Account"),
-            _buildDrawerItem(Icons.account_balance_wallet, "Wallet and Payment"),
+            _buildDrawerItem(
+                Icons.account_balance_wallet, "Wallet and Payment"),
             _buildDrawerItem(Icons.card_giftcard, "Credits and Gift Cards"),
             _buildDrawerItem(Icons.receipt_long, "My Orders"),
             _buildDrawerItem(Icons.bookmark, "My Favorites"),
+            if (!serviceProviderStatus.isServiceProvider)
+              _buildDrawerItem(
+                Icons.location_on_outlined,
+                'Track Your Booking',
+                () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PendingBookingsScreen(),
+                    ),
+                  );
+                },
+              ),
             _buildSectionTitle("GIFT-ON-DEMAND"),
             _buildDrawerItem(Icons.card_giftcard, "Buy a Gift Card"),
             _buildSectionTitle("NETWORK"),
-            _buildDrawerItem(Icons.flight_takeoff, "Boss Up Now"),
+            _buildDrawerItem(Icons.flight_takeoff, "Signup Now"),
             _buildDrawerItem(Icons.home, "Become a Partner"),
             _buildDrawerItem(Icons.share, "Sponsorship Opportunities"),
             _buildSectionTitle("SUPPORT ON DEMAND"),

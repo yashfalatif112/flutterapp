@@ -25,9 +25,16 @@ class ThankYouDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset(
-              'assets/images/bubble_tick.png',
-              height: 100,
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xff48B1DB)
+              ),
+              child: Center(
+                child: Icon(Icons.check,color: Colors.white,size: 40,),
+              ),
             ),
             const SizedBox(height: 20),
             Text(
@@ -51,7 +58,7 @@ class ThankYouDialog extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
+                  backgroundColor: Color(0xff48B1DB),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

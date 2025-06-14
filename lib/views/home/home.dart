@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:homease/views/home/widgets/book_later_section.dart';
 import 'package:homease/views/home/widgets/home_header.dart';
 import 'package:homease/views/home/widgets/most_popular.dart';
 import 'package:homease/views/home/widgets/our_services.dart';
+import 'package:homease/views/home/widgets/phone_consultation_section.dart';
 import 'package:homease/views/home/widgets/recommended_section.dart';
-import 'package:homease/views/notifications/notifications.dart';
+import 'package:homease/views/home/widgets/whats_buzzing_section.dart';
 
 class HomeScreen extends StatefulWidget {
   final GlobalKey<ScaffoldState> scaffoldKey;
@@ -40,7 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _popupItem('Hot this Week'),
         _popupItem('Extended Hours Experts'),
         _popupItem('Favorites'),
-        _popupItem('What’s Buzzing Today'),
+        _popupItem("What's Buzzing Today"),
         _popupItem('Search for services'),
         _popupItem('Start a project'),
       ],
@@ -148,23 +150,29 @@ class _HomeScreenState extends State<HomeScreen> {
                 MostPopularSection(),
                 SizedBox(height: 20),
                 RecommendedSection(),
+                SizedBox(height: 20),
+                BookLaterSection(),
+                SizedBox(height: 20),
+                PhoneConsultationSection(),
+                SizedBox(height: 20),
+                WhatsBuzzingSection(),
               ],
             ),
           ),
         ),
       ),
-      floatingActionButton: Container(
-        width: 60,
-        height: 60,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.green,
-        ),
-        child: Icon(
-          Icons.star_border,
-          color: Colors.white,
-        ),
-      ),
+      // floatingActionButton: Container(
+      //   width: 60,
+      //   height: 60,
+      //   decoration: BoxDecoration(
+      //     shape: BoxShape.circle,
+      //     color: Colors.green,
+      //   ),
+      //   child: Icon(
+      //     Icons.star_border,
+      //     color: Colors.white,
+      //   ),
+      // ),
     );
   }
 }

@@ -119,11 +119,12 @@ class CallNotificationHandler {
 
   void _handleIncomingMessage(RemoteMessage message) {
     debugPrint('Foreground message received: ${message.data}');
-    if (message.data['type'] == 'video_call') {
+    if (message.data['type'] == 'video_call' || message.data['type'] == 'audio_call') {
       final String channelName = message.data['channelName'] ?? '';
       final String callerName = message.data['callerName'] ?? 'Unknown';
+      final bool isAudioCall = message.data['type'] == 'audio_call';
 
-      _showIncomingCallNotification(channelName, callerName);
+      _showIncomingCallNotification(channelName, callerName, isAudioCall: isAudioCall);
 
       if (_navigatorKey?.currentState != null) {
         _navigatorKey!.currentState!.push(
@@ -131,6 +132,7 @@ class CallNotificationHandler {
             builder: (_) => IncomingCallScreen(
               channelName: channelName,
               callerName: callerName,
+              isAudioCall: isAudioCall,
             ),
           ),
         );
@@ -140,41 +142,43 @@ class CallNotificationHandler {
 
   Future<void> handleBackgroundMessage(RemoteMessage message) async {
     debugPrint('Background message received: ${message.data}');
-    if (message.data['type'] == 'video_call') {
+    if (message.data['type'] == 'video_call' || message.data['type'] == 'audio_call') {
       final String channelName = message.data['channelName'] ?? '';
       final String callerName = message.data['callerName'] ?? 'Unknown';
+      final bool isAudioCall = message.data['type'] == 'audio_call';
 
-      await _showIncomingCallNotification(channelName, callerName);
+      await _showIncomingCallNotification(channelName, callerName, isAudioCall: isAudioCall);
     }
   }
 
   Future<void> _showIncomingCallNotification(
-      String channelName, String callerName) async {
-    // Create Android-specific notification details with full screen intent
-    AndroidNotificationDetails androidDetails =
-        const AndroidNotificationDetails(
+    String channelName,
+    String callerName, {
+    bool isAudioCall = false,
+  }) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
       'call_channel',
       'Video Calls',
-      channelDescription: 'Notifications for incoming video calls',
+      channelDescription: 'Notifications for incoming calls',
       importance: Importance.max,
       priority: Priority.high,
-      fullScreenIntent: true,
+      showWhen: true,
+      enableVibration: true,
+      enableLights: true,
       playSound: true,
       sound: RawResourceAndroidNotificationSound('ringtone'),
-      ongoing: true,
-      visibility: NotificationVisibility.public,
-      ticker: 'Incoming video call',
       category: AndroidNotificationCategory.call,
+      visibility: NotificationVisibility.public,
+      fullScreenIntent: true,
       actions: [
-        AndroidNotificationAction('accept', 'Accept', 
-            showsUserInterface: true, cancelNotification: true),
-        AndroidNotificationAction('decline', 'Decline',
-            showsUserInterface: true, cancelNotification: true),
-      ]
+        AndroidNotificationAction('ACCEPT_ACTION', 'Accept'),
+        AndroidNotificationAction('DECLINE_ACTION', 'Decline'),
+      ],
     );
 
-    // Create iOS-specific notification details
-    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+    const DarwinNotificationDetails iOSPlatformChannelSpecifics =
+        DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
@@ -183,16 +187,16 @@ class CallNotificationHandler {
       categoryIdentifier: 'INCOMING_CALL',
     );
 
-    NotificationDetails details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iOSPlatformChannelSpecifics,
     );
 
     await _flutterLocalNotificationsPlugin.show(
-      0,  // Use a unique ID for each call
-      'Incoming Call',
+      0,
+      'Incoming ${isAudioCall ? 'Audio' : 'Video'} Call',
       '$callerName is calling you',
-      details,
+      platformChannelSpecifics,
       payload: channelName,
     );
   }
@@ -265,65 +269,90 @@ class CallNotificationHandler {
   }
 
   Future<void> sendCallNotification(
-      String receiverId, String channelName, String callerName) async {
-    final receiverDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(receiverId)
-        .get();
+    String receiverId,
+    String channelName,
+    String callerName, {
+    bool isAudioCall = false,
+  }) async {
+    try {
+      // Get receiver's FCM token
+      final receiverDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(receiverId)
+          .get();
+      final receiverToken = receiverDoc.data()?['fcmToken'];
 
-    final fcmToken = receiverDoc.data()?['fcmToken'];
+      if (receiverToken == null) {
+        debugPrint('No FCM token found for receiver');
+        return;
+      }
 
-    if (fcmToken != null) {
+      // Create notification message
       final message = {
-        'to': fcmToken,
-        'priority': 'high',
+        'token': receiverToken,
+        'notification': {
+          'title': isAudioCall ? 'Incoming Audio Call' : 'Incoming Video Call',
+          'body': '$callerName is calling...',
+        },
         'data': {
-          'type': 'video_call',
+          'type': isAudioCall ? 'audio_call' : 'video_call',
           'channelName': channelName,
           'callerName': callerName,
-          'click_action': 'FLUTTER_NOTIFICATION_CLICK', // Important for opening the app
-        },
-        'notification': {
-          'title': 'Incoming Call',
-          'body': '$callerName is calling you',
-          'sound': 'ringtone.mp3',
-          'android_channel_id': 'call_channel',
-          'tag': 'call', // Use tag for call notifications
+          'click_action': 'FLUTTER_NOTIFICATION_CLICK',
         },
         'android': {
           'priority': 'high',
           'notification': {
-            'channel_id': 'call_channel',
-            'sound': 'ringtone',
+            'channelId': 'calls',
             'priority': 'max',
-            'visibility': 'public',
-            'tag': 'call',
-            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+            'sound': 'default',
+            'defaultSound': true,
+            'defaultVibrateTimings': true,
+            'defaultLightSettings': true,
+            'importance': 'max',
+            'category': 'call',
+            'actions': [
+              {
+                'title': 'Accept',
+                'action': 'accept_call',
+                'icon': '@drawable/ic_accept_call',
+              },
+              {
+                'title': 'Decline',
+                'action': 'decline_call',
+                'icon': '@drawable/ic_decline_call',
+              },
+            ],
           },
-          'direct_boot_ok': true, // Work in direct boot mode
         },
         'apns': {
-          'headers': {
-            'apns-priority': '10', // High priority
-            'apns-push-type': 'alert',
-          },
           'payload': {
             'aps': {
-              'sound': 'ringtone.aiff',
-              'category': 'INCOMING_CALL',
+              'sound': 'default',
+              'badge': 1,
               'content-available': 1,
-              'interruption-level': 'time-sensitive',
               'mutable-content': 1,
+              'category': 'CALL_CATEGORY',
             },
+          },
+          'headers': {
+            'apns-priority': '10',
+            'apns-push-type': 'alert',
           },
         },
       };
 
+      // Send notification using Firebase Cloud Messaging
       await FirebaseFirestore.instance.collection('notifications').add({
         'receiverId': receiverId,
         'message': message,
         'timestamp': FieldValue.serverTimestamp(),
       });
+
+      debugPrint('Call notification sent successfully');
+    } catch (e) {
+      debugPrint('Error sending call notification: $e');
+      rethrow;
     }
   }
 

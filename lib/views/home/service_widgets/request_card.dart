@@ -97,6 +97,15 @@ class _RequestCardState extends State<RequestCard> {
                     Text(widget.booking.serviceName, 
                          style: const TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 5),
+                    if (widget.booking.price != null)
+                      Text(
+                        '\$${widget.booking.price!.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    const SizedBox(height: 5),
                     Text(
                       '${_formatDate(widget.booking.createdAt)}\n${_getTimeRange(widget.booking.createdAt)}', 
                       style: const TextStyle(fontSize: 10, color: Colors.grey)
@@ -107,11 +116,11 @@ class _RequestCardState extends State<RequestCard> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.2),
+                  color: Color(0xff48B1DB).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(widget.statusLabel, 
-                         style: const TextStyle(color: Colors.green)),
+                         style: TextStyle(color: Color(0xff48B1DB))),
               ),
             ],
           ),
@@ -141,10 +150,6 @@ class _RequestCardState extends State<RequestCard> {
                           child: Icon(Icons.person, color: Colors.white),
                         ),
                   title: Text(userDetails?.name ?? 'Unknown User'),
-                  subtitle: Text(
-                    userDetails?.address ?? 'Unknown Location',
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
                 ),
                 
           // Action buttons
@@ -172,7 +177,7 @@ class _RequestCardState extends State<RequestCard> {
                         child: Center(
                           child: Text(
                             'Decline',
-                            style: TextStyle(color: Colors.green),
+                            style: TextStyle(color: Color(0xff48B1DB)),
                           ),
                         ),
                       ),
@@ -192,7 +197,7 @@ class _RequestCardState extends State<RequestCard> {
                         height: 35,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(50),
-                          color: Colors.green
+                          color: Color(0xff48B1DB)
                         ),
                         child: Center(
                           child: Text(

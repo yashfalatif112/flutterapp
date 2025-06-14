@@ -6,15 +6,18 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:homease/services/call_manager.dart';
 import 'package:homease/views/messages/video_call.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:homease/views/messages/audio_call.dart';
 
 class IncomingCallScreen extends StatefulWidget {
   final String channelName;
   final String callerName;
+  final bool isAudioCall;
 
   const IncomingCallScreen({
     Key? key,
     required this.channelName,
     required this.callerName,
+    this.isAudioCall = false,
   }) : super(key: key);
 
   @override
@@ -117,10 +120,16 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => VideoCallScreen(
-              channelName: widget.channelName,
-              isIncoming: true,
-            ),
+            builder: (_) => widget.isAudioCall
+                ? AudioCallScreen(
+                    channelName: widget.channelName,
+                    callerName: widget.callerName,
+                    isIncoming: true,
+                  )
+                : VideoCallScreen(
+                    channelName: widget.channelName,
+                    isIncoming: true,
+                  ),
           ),
         );
       }
@@ -138,7 +147,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
     }
   }
 
-  void _rejectCall() async {
+  void _declineCall() async {
     try {
       // Update call status in Firestore
       await FirebaseFirestore.instance
@@ -200,102 +209,103 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
 
     return WillPopScope(
       onWillPop: () async {
-        _rejectCall();
+        _declineCall();
         return false;
       },
       child: Scaffold(
         backgroundColor: Colors.black,
-        body: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(height: 60),
-                // Caller avatar
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.grey.shade800,
-                  ),
-                  child: const Icon(
-                    Icons.person,
-                    size: 80,
-                    color: Colors.white,
-                  ),
+        body: Stack(
+          children: [
+            // Background gradient
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Theme.of(context).primaryColor,
+                    Colors.black,
+                  ],
                 ),
-                const SizedBox(height: 24),
-                // Caller name
-                Text(
-                  widget.callerName,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
+              ),
+            ),
+            // Main content
+            SafeArea(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Caller info
+                  CircleAvatar(
+                    radius: 60,
+                    backgroundColor: Colors.white24,
+                    child: Icon(
+                      widget.isAudioCall ? Icons.person : Icons.videocam,
+                      size: 60,
+                      color: Colors.white70,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                // Call status
-                const Text(
-                  'Incoming video call...',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 16,
+                  const SizedBox(height: 20),
+                  Text(
+                    widget.callerName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const Spacer(),
-                // Call controls
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 60),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  const SizedBox(height: 10),
+                  Text(
+                    'Incoming ${widget.isAudioCall ? 'Audio' : 'Video'} Call',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  // Call controls
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Reject button
-                      GestureDetector(
-                        onTap: _rejectCall,
-                        child: Container(
-                          width: 70,
-                          height: 70,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.red,
-                          ),
-                          child: const Icon(
-                            Icons.call_end,
-                            color: Colors.white,
-                            size: 35,
-                          ),
-                        ),
+                      _buildControlButton(
+                        icon: Icons.call_end,
+                        backgroundColor: Colors.red,
+                        onPressed: _declineCall,
                       ),
-                      // Accept button
-                      GestureDetector(
-                        onTap: _acceptCall,
-                        child: Container(
-                          width: 70,
-                          height: 70,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.green,
-                          ),
-                          child: _isAnswering
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                )
-                              : const Icon(
-                                  Icons.videocam,
-                                  color: Colors.white,
-                                  size: 35,
-                                ),
-                        ),
+                      const SizedBox(width: 20),
+                      _buildControlButton(
+                        icon: widget.isAudioCall ? Icons.call : Icons.videocam,
+                        backgroundColor: Colors.green,
+                        onPressed: _acceptCall,
                       ),
                     ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildControlButton({
+    required IconData icon,
+    required Color backgroundColor,
+    required VoidCallback onPressed,
+  }) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          color: Colors.white,
+          size: 30,
         ),
       ),
     );

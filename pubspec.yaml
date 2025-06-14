@@ -49,13 +49,23 @@ dependencies:
   flutter_stripe: ^11.5.0
   http: ^1.4.0
   webview_flutter: ^4.11.0
-  permission_handler: ^11.0.0
+  permission_handler: ^11.2.0
   agora_rtc_engine: ^6.2.0
   firebase_messaging: ^15.2.5
   flutter_local_notifications: ^19.2.0
   flutter_launcher_icons: ^0.14.3
   mailer: ^6.1.0
   url_launcher: ^6.2.5
+  image_picker: ^1.1.2
+  google_sign_in: ^6.2.1
+  sign_in_with_apple: ^6.0.0
+  crypto: ^3.0.3
+  record: ^5.0.4
+  audioplayers: ^5.2.1
+  path_provider: ^2.1.2
+  google_maps_flutter: ^2.5.3
+  geolocator: ^10.1.0
+  geocoding: ^2.1.1
 
 dev_dependencies:
   flutter_test:
@@ -64,7 +74,7 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/logo/applogo.jpg"
+  image_path: "assets/logo/background_logo.png"
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

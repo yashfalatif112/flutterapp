@@ -11,6 +11,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:homease/views/authentication/role_selection/role_selection.dart';
+import 'package:homease/services/social_auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -30,6 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _errorMessage;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final SocialAuthService _socialAuthService = SocialAuthService();
 
   void _toggleObscure() {
     setState(() {
@@ -121,6 +123,96 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final result = await _socialAuthService.signInWithGoogle();
+
+      if (!result['success']) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = result['message'];
+        });
+        return;
+      }
+
+      if (result['isNewUser']) {
+        setState(() {
+          _isLoading = false;
+        });
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please sign up first to create an account')),
+        );
+        return;
+      }
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => BottomBarScreen()),
+      );
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'An error occurred: $e';
+      });
+    }
+  }
+
+  Future<void> _handleAppleSignIn() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final result = await _socialAuthService.signInWithApple();
+
+      if (!result['success']) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = result['message'];
+        });
+        return;
+      }
+
+      if (result['isNewUser']) {
+        setState(() {
+          _isLoading = false;
+        });
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please sign up first to create an account')),
+        );
+        return;
+      }
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => BottomBarScreen()),
+      );
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'An error occurred: $e';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -131,19 +223,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             children: [
               SizedBox(height: 30),
-              Container(
-                height: 100,
-                width: 100, 
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  image: DecorationImage(
-                    image: AssetImage('assets/logo/mainlogo.png'),
-                    fit: BoxFit
-                        .cover, 
-                  ),
-                ),
-              ),
-
+              Image.asset('assets/logo/logo.png',height:100),
               const SizedBox(height: 16),
               const Text("Login Here!",
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
@@ -154,8 +234,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 30),
-
-              // Show error message if any
               if (_errorMessage != null)
                 Container(
                   padding: EdgeInsets.all(8),
@@ -238,7 +316,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Checkbox(
                     value: _agreedToTerms,
                     onChanged: _toggleTerms,
-                    activeColor: Colors.green,
+                    activeColor: Color(0xff48B1DB),
                   ),
                   const Text("I agree to "),
                   GestureDetector(
@@ -281,7 +359,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   GestureDetector(
-                    onTap: () {},
+                    onTap: _handleGoogleSignIn,
                     child: Container(
                       width: 100,
                       height: 36,
@@ -308,7 +386,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   GestureDetector(
-                    onTap: () {},
+                    onTap: _handleAppleSignIn,
                     child: Container(
                       width: 100,
                       height: 36,
@@ -353,7 +431,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Text(
                       'Sign up',
                       style: TextStyle(
-                        color: Colors.green,
+                        color: Color(0xff48B1DB),
                         fontWeight: FontWeight.bold,
                       ),
                     ),

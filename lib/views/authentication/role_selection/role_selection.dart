@@ -21,7 +21,7 @@ class RoleSelectionScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   image: DecorationImage(
-                    image: AssetImage('assets/logo/mainlogo.png'),
+                    image: AssetImage('assets/logo/background_logo.png'),
                     fit: BoxFit.cover,
                   ),
                 ),
