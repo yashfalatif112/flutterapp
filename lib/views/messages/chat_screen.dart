@@ -34,6 +34,8 @@ class _ChatScreenState extends State<ChatScreen> {
   StreamSubscription<DocumentSnapshot>? _callSub;
   bool _isRecording = false;
 
+  bool _showVideoCallIcon = false;
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +47,7 @@ class _ChatScreenState extends State<ChatScreen> {
     markMessagesAsRead();
     syncUserInfo();
     initCallNotifications();
+    _checkVideoCallEligibility();
   }
 
   void initCallNotifications() {
@@ -56,6 +59,32 @@ class _ChatScreenState extends State<ChatScreen> {
     _callSub?.cancel();
     _voiceService.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkVideoCallEligibility() async {
+    final currentUserDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+    final isServiceProvider = currentUserDoc.data()?['serviceProvider'] == true;
+    final currentUserDescription = currentUserDoc.data()?['description'] ?? '';
+
+    if (isServiceProvider) {
+      // Service provider: show if their own description is Counseling
+      setState(() {
+        _showVideoCallIcon = currentUserDescription == 'Counseling';
+      });
+    } else {
+      // Customer: show if the other user's description is Counseling
+      final otherUserDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.otherUserId)
+          .get();
+      final otherUserDescription = otherUserDoc.data()?['description'] ?? '';
+      setState(() {
+        _showVideoCallIcon = otherUserDescription == 'Counseling';
+      });
+    }
   }
 
   void _startCall({bool isAudioCall = false}) async {
@@ -555,11 +584,12 @@ class _ChatScreenState extends State<ChatScreen> {
             icon: const Icon(Icons.call, color: Colors.black),
             onPressed: () => _startCall(isAudioCall: true),
           ),
-          IconButton(
-            padding: const EdgeInsets.only(right: 15),
-            icon: const Icon(Icons.videocam, color: Colors.black),
-            onPressed: () => _startCall(isAudioCall: false),
-          ),
+          if (_showVideoCallIcon)
+            IconButton(
+              padding: const EdgeInsets.only(right: 15),
+              icon: const Icon(Icons.videocam, color: Colors.black),
+              onPressed: () => _startCall(isAudioCall: false),
+            ),
         ],
       ),
       body: Column(
