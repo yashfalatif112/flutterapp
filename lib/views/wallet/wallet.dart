@@ -209,7 +209,6 @@ class _WalletScreenState extends State<WalletScreen> {
       );
       return;
     }
-    await _saveBookingToFirebase(card, 'Approved', 'Stripe');
 
     setState(() {
       isProcessingPayment = true;
@@ -219,7 +218,7 @@ class _WalletScreenState extends State<WalletScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => const Center(
-        child: CircularProgressIndicator(color: Colors.green),
+        child: CircularProgressIndicator(color: Colors.blue),
       ),
     );
 

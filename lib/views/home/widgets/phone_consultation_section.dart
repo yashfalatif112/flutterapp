@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:homease/views/services/services.dart';
 import 'package:homease/views/services/provider/service_provider.dart';
+import 'package:homease/views/home/widgets/shimmer_loading.dart';
 import 'package:provider/provider.dart';
 
 class PhoneConsultationSection extends StatelessWidget {
@@ -11,12 +12,25 @@ class PhoneConsultationSection extends StatelessWidget {
     final provider = Provider.of<ServicesProvider>(context);
     final allCategories = provider.categories;
     
+    if (provider.isLoading) {
+      return const SectionShimmerLoading(
+        title: 'Available For Phone Consultation',
+      );
+    }
+
+    if (allCategories.isEmpty) {
+      return const SizedBox.shrink(); // Return empty widget if no categories
+    }
+    
     // If we have less than 5 items, just use all of them
     // Otherwise, take items 15-19 (or cycle back to start if needed)
-    final categories = List.generate(5, (index) {
-      final actualIndex = (index + 15) % allCategories.length;
-      return allCategories[actualIndex];
-    });
+    final categories = List.generate(
+      allCategories.length < 5 ? allCategories.length : 5,
+      (index) {
+        final actualIndex = (index + 15) % allCategories.length;
+        return allCategories[actualIndex];
+      },
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -28,61 +42,59 @@ class PhoneConsultationSection extends StatelessWidget {
         const SizedBox(height: 12),
         SizedBox(
           height: 170,
-          child: provider.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: categories.length,
-                  itemBuilder: (context, index) {
-                    final category = categories[index];
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => BookingsScreen(
-                              selectedCategory: category['name'],
-                            ),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        width: 140,
-                        margin: const EdgeInsets.only(right: 12),
-                        padding: const EdgeInsets.all(8),
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: categories.length,
+            itemBuilder: (context, index) {
+              final category = categories[index];
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BookingsScreen(
+                        selectedCategory: category['name'],
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  width: 140,
+                  margin: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: 80,
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              height: 80,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade300,
-                                borderRadius: BorderRadius.circular(8),
-                                image: const DecorationImage(
-                                  image: AssetImage('assets/images/recommended.png'),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              category['name'] ?? 'Unknown',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              "${category['subcategories'].length} services",
-                              style: const TextStyle(color: Color(0xff48B1DB)),
-                            ),
-                          ],
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(8),
+                          image: const DecorationImage(
+                            image: AssetImage('assets/images/recommended.png'),
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
-                    );
-                  },
+                      const SizedBox(height: 8),
+                      Text(
+                        category['name'] ?? 'Unknown',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        "${category['subcategories']?.length ?? 0} services",
+                        style: const TextStyle(color: Color(0xff48B1DB)),
+                      ),
+                    ],
+                  ),
                 ),
+              );
+            },
+          ),
         ),
       ],
     );

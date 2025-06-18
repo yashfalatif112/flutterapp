@@ -1,10 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:homease/views/authentication/signup/provider/category_provider.dart';
 import 'package:homease/views/services/services.dart';
+import 'package:homease/views/home/widgets/shimmer_loading.dart';
 import 'package:provider/provider.dart';
 
-class OurServices extends StatelessWidget {
+class OurServices extends StatefulWidget {
   const OurServices({super.key});
+
+  @override
+  State<OurServices> createState() => _OurServicesState();
+}
+
+class _OurServicesState extends State<OurServices> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize categories when widget is first built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<CategoriesProvider>(context, listen: false).fetchCategories();
+    });
+  }
 
   IconData getServiceIcon(String serviceName) {
     switch (serviceName.toLowerCase()) {
@@ -40,7 +55,10 @@ class OurServices extends StatelessWidget {
     final provider = Provider.of<CategoriesProvider>(context);
 
     if (provider.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const SectionShimmerLoading(
+        title: 'Our Services',
+        isHorizontalList: false,
+      );
     }
 
     if (provider.error != null) {
@@ -48,6 +66,10 @@ class OurServices extends StatelessWidget {
     }
 
     final categories = provider.categories;
+
+    if (categories.isEmpty) {
+      return const Center(child: Text('No services available'));
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

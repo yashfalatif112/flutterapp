@@ -412,18 +412,52 @@ class ServiceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () {
+      onTap: () async {
+        final currentUser = FirebaseAuth.instance.currentUser!;
+        final userData = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .get();
+
+        final ids = [currentUser.uid, userId];
+        ids.sort();
+        final chatId = ids.join('_');
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('chats')
+            .doc(userId)
+            .set({
+          'chatId': chatId,
+          'userName': name,
+          'userImage': imageUrl ?? '',
+          'lastMessage': '',
+          'timestamp': FieldValue.serverTimestamp(),
+          'unreadCount': 0,
+        }, SetOptions(merge: true));
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .collection('chats')
+            .doc(currentUser.uid)
+            .set({
+          'chatId': chatId,
+          'userName': userData.data()?['name'] ?? 'User',
+          'userImage': userData.data()?['profilePic'] ?? '',
+          'lastMessage': '',
+          'timestamp': FieldValue.serverTimestamp(),
+          'unreadCount': 0,
+        }, SetOptions(merge: true));
+
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => BookService(
-              providerId: userId,
-              providerName: name,
-              providerImage: imageUrl,
-              providerOccupation: occupation,
-              providerDescription: description,
-              providerAddress: address,
-              servicePrice: servicePrice,
+            builder: (context) => ChatScreen(
+              otherUserId: userId,
+              otherUserName: name,
+              otherUserImage: imageUrl,
             ),
           ),
         );
@@ -491,66 +525,6 @@ class ServiceTile extends StatelessWidget {
               child: const Icon(Icons.person_outline, color: Colors.black),
             ),
             const SizedBox(width: 12),
-            Container(
-              height: 40,
-              width: 1,
-              color: Colors.grey,
-            ),
-            const SizedBox(width: 12),
-            GestureDetector(
-              onTap: () async {
-                final currentUser = FirebaseAuth.instance.currentUser!;
-                final userData = await FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(currentUser.uid)
-                    .get();
-
-                final ids = [currentUser.uid, userId];
-                ids.sort();
-                final chatId = ids.join('_');
-
-                await FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(currentUser.uid)
-                    .collection('chats')
-                    .doc(userId)
-                    .set({
-                  'chatId': chatId,
-                  'userName': name,
-                  'userImage': imageUrl ?? '',
-                  'lastMessage': '',
-                  'timestamp': FieldValue.serverTimestamp(),
-                  'unreadCount': 0,
-                }, SetOptions(merge: true));
-
-                await FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(userId)
-                    .collection('chats')
-                    .doc(currentUser.uid)
-                    .set({
-                  'chatId': chatId,
-                  'userName': userData.data()?['name'] ?? 'User',
-                  'userImage': userData.data()?['profilePic'] ?? '',
-                  'lastMessage': '',
-                  'timestamp': FieldValue.serverTimestamp(),
-                  'unreadCount': 0,
-                }, SetOptions(merge: true));
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ChatScreen(
-                      otherUserId: userId,
-                      otherUserName: name,
-                      otherUserImage: imageUrl,
-                    ),
-                  ),
-                );
-              },
-              child: const Icon(Icons.chat_sharp, color: Colors.black),
-            ),
-            const SizedBox(width: 5),
           ],
         ),
       ),

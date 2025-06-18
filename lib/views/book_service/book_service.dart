@@ -16,6 +16,7 @@ class BookService extends StatefulWidget {
   final String? providerDescription;
   final String? providerAddress;
   final double? servicePrice;
+  final bool isCustomOffer;
 
   const BookService({
     super.key,
@@ -26,6 +27,7 @@ class BookService extends StatefulWidget {
     this.providerDescription,
     this.providerAddress,
     this.servicePrice,
+    this.isCustomOffer = false,
   });
 
   @override
@@ -40,6 +42,14 @@ class _BookServiceState extends State<BookService> {
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _instructionController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isCustomOffer && widget.servicePrice != null) {
+      _priceController.text = widget.servicePrice.toString();
+    }
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -74,9 +84,9 @@ class _BookServiceState extends State<BookService> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text(
-          'Task',
-          style: TextStyle(
+        title: Text(
+          widget.isCustomOffer ? 'Custom Offer' : 'Task',
+          style: const TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
           ),
@@ -96,18 +106,16 @@ class _BookServiceState extends State<BookService> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${widget.providerDescription} Service',
-                style: TextStyle(
+                '${widget.providerDescription ?? 'Service'} Booking',
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(
-                height: 10,
-              ),
+              const SizedBox(height: 10),
               buildServiceCard(
                 title: "SERVICE",
-                service: widget.providerDescription ?? '',
+                service: widget.providerDescription ?? 'Service',
                 index: 1,
                 onTap: () {},
               ),
@@ -215,16 +223,17 @@ class _BookServiceState extends State<BookService> {
                 ),
                 child: TextField(
                   controller: _priceController,
+                  enabled: !widget.isCustomOffer,
                   keyboardType: TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
                   ],
-                  decoration: const InputDecoration(
-                    hintText: 'Enter your price (e.g., 50.00)',
-                    hintStyle: TextStyle(color: Colors.grey),
+                  decoration: InputDecoration(
+                    hintText: widget.isCustomOffer ? 'Custom offer price' : 'Enter your price (e.g., 50.00)',
+                    hintStyle: const TextStyle(color: Colors.grey),
                     border: InputBorder.none,
-                    prefixIcon: Icon(Icons.attach_money, color: Color(0xff48B1DB)),
-                    contentPadding: EdgeInsets.symmetric(vertical: 12),
+                    prefixIcon: const Icon(Icons.attach_money, color: Color(0xff48B1DB)),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
               ),
@@ -317,7 +326,7 @@ class _BookServiceState extends State<BookService> {
                         instructions: _instructionController.text.trim(),
                         currentUserId: currentUserId,
                         serviceProviderId: widget.providerId,
-                        price: userOfferedPrice, // Use the user's offered price
+                        price: userOfferedPrice,
                       );
 
                       Navigator.push(
@@ -340,8 +349,8 @@ class _BookServiceState extends State<BookService> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text(
-                    'Book Now',
+                  child: Text(
+                    widget.isCustomOffer ? 'Confirm Booking' : 'Book Now',
                     style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,

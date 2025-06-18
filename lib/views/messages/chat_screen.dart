@@ -7,6 +7,7 @@ import 'package:homease/services/call_notification_handler.dart';
 import 'package:homease/services/voice_message_service.dart';
 import 'package:homease/views/messages/video_call.dart';
 import 'package:homease/views/messages/audio_call.dart';
+import 'package:homease/views/book_service/book_service.dart';
 
 class ChatScreen extends StatefulWidget {
   final String otherUserId;
@@ -300,6 +301,67 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildMessageContent(Map<String, dynamic> msg) {
     final isMe = msg['senderId'] == user.uid;
     final isVoiceMessage = msg['type'] == 'voice';
+    final isOfferMessage = msg['type'] == 'offer';
+
+    if (isOfferMessage) {
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isMe ? const Color(0xff48B1DB) : const Color(0xFFD4F5C4),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${msg['senderName']} sent you a custom offer for ${msg['serviceName']} at \$${msg['price']}',
+              style: TextStyle(
+                color: isMe ? Colors.white : Colors.black,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (!isMe) // Only show Book Now button for receiver
+              ElevatedButton(
+                onPressed: () async {
+                  // Get service provider's details
+                  final providerDoc = await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(widget.otherUserId)
+                      .get();
+                  
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BookService(
+                        providerId: widget.otherUserId,
+                        providerName: widget.otherUserName,
+                        providerImage: widget.otherUserImage,
+                        providerOccupation: providerDoc.data()?['occupation'] ?? '',
+                        providerDescription: msg['serviceName'],
+                        providerAddress: providerDoc.data()?['address'] ?? '',
+                        servicePrice: msg['price'].toDouble(),
+                        isCustomOffer: true,
+                      ),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xff48B1DB),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Book Now',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+          ],
+        ),
+      );
+    }
 
     if (isVoiceMessage) {
       return GestureDetector(
@@ -347,6 +409,131 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
     );
+  }
+
+  void _showCustomOfferDialog() async {
+    final TextEditingController priceController = TextEditingController();
+    final TextEditingController serviceController = TextEditingController();
+    
+    // Get service provider's details
+    final providerDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+    
+    // Pre-fill the service name from provider's description
+    serviceController.text = providerDoc.data()?['description'] ?? '';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: const Text('Create Custom Offer'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: serviceController,
+              decoration: InputDecoration(
+                labelText: 'Service Name',
+                border: OutlineInputBorder(),
+                focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xff48B1DB)),
+        ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: priceController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Price (\$)',
+                border: OutlineInputBorder(),
+                focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xff48B1DB)),
+        ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel',style: TextStyle(color: Colors.black),),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (priceController.text.isNotEmpty && serviceController.text.isNotEmpty) {
+                final price = double.tryParse(priceController.text);
+                if (price != null && price > 0) {
+                  Navigator.pop(context);
+                  sendCustomOffer(price, serviceController.text);
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xff48B1DB),
+            ),
+            child: const Text('Send Offer',style: TextStyle(color: Colors.white ),),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void sendCustomOffer(double price, String serviceName) async {
+    final currentUserDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    final currentUserName = currentUserDoc.data()?['name'] ?? '';
+    final currentUserImage = currentUserDoc.data()?['profilePic'] ?? '';
+
+    await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .add({
+      'senderId': user.uid,
+      'receiverId': widget.otherUserId,
+      'type': 'offer',
+      'price': price,
+      'serviceName': serviceName,
+      'senderName': currentUserName,
+      'timestamp': FieldValue.serverTimestamp(),
+      'read': false,
+    });
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('chats')
+        .doc(widget.otherUserId)
+        .set({
+      'chatId': chatId,
+      'lastMessage': 'Custom offer for $serviceName - \$$price',
+      'timestamp': FieldValue.serverTimestamp(),
+      'unreadCount': 0,
+      'userName': widget.otherUserName,
+      'userImage': widget.otherUserImage ?? '',
+    });
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.otherUserId)
+        .collection('chats')
+        .doc(user.uid)
+        .set({
+      'chatId': chatId,
+      'lastMessage': 'Custom offer for $serviceName - \$$price',
+      'timestamp': FieldValue.serverTimestamp(),
+      'unreadCount': FieldValue.increment(1),
+      'userName': currentUserName,
+      'userImage': currentUserImage,
+    });
   }
 
   @override
@@ -455,6 +642,52 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                     padding: const EdgeInsets.all(12),
                     child: const Icon(Icons.send, color: Colors.white),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                GestureDetector(
+                  onTap: () async {
+                    // Get current user's details to check if they are a service provider
+                    final currentUserDoc = await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(user.uid)
+                        .get();
+                    
+                    final isServiceProvider = currentUserDoc.data()?['serviceProvider'] == true;
+
+                    if (isServiceProvider) {
+                      // If the current user is the service provider, show custom offer dialog
+                      _showCustomOfferDialog();
+                    } else {
+                      // If the current user is the customer, go directly to booking
+                      // Get service provider's details
+                      final providerDoc = await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(widget.otherUserId)
+                          .get();
+                      
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BookService(
+                            providerId: widget.otherUserId,
+                            providerName: widget.otherUserName,
+                            providerImage: widget.otherUserImage,
+                            providerOccupation: providerDoc.data()?['occupation'] ?? '',
+                            providerDescription: providerDoc.data()?['description'] ?? '',
+                            providerAddress: providerDoc.data()?['address'] ?? '',
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xff48B1DB),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: const Icon(Icons.add, color: Colors.white),
                   ),
                 ),
                 const SizedBox(width: 10),
